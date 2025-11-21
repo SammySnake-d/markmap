@@ -46,6 +46,16 @@ export interface IFeatures {
 
 export interface ITransformer {
   urlBuilder: UrlBuilder;
+  /**
+   * Separator configuration for parsing notes.
+   * Requirements: 6.7, 13.3, 13.8
+   */
+  separators?: {
+    node?: string;
+    note?: string;
+    noteBlock?: string;
+    escape?: string;
+  };
 }
 
 export interface IMarkmapJSONOptions extends IMarkmapJSONOptionsForView {

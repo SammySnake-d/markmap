@@ -223,7 +223,7 @@ export function parseDetailedNote(
  * @param tag - The blockquote tag name (default: 'blockquote')
  * @returns The extracted text content
  */
-function extractBlockquoteContent(
+export function extractBlockquoteContent(
   html: string,
   tag: string = 'blockquote',
 ): string {
