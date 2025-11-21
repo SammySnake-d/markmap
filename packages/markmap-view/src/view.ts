@@ -454,7 +454,20 @@ export class Markmap {
       .append<HTMLDivElement>('xhtml:div')
       // The inner `<div>` with `display: inline-block` to get the proper width
       .append<HTMLDivElement>('xhtml:div')
-      .html((d) => d.content)
+      .html((d) => {
+        // Check if node has notes (Requirements 5.4)
+        // Notes are stored in the payload for enhanced nodes
+        const hasNote =
+          d.payload?.hasNote ||
+          d.payload?.inlineNote ||
+          d.payload?.detailedNote;
+
+        if (hasNote) {
+          // Add note icon after content
+          return `${d.content}<span class="markmap-note-icon" title="This node has notes">📝</span>`;
+        }
+        return d.content;
+      })
       .attr('xmlns', 'http://www.w3.org/1999/xhtml');
     mmFoEnter.each(function () {
       const el = this.firstChild?.firstChild as Element;

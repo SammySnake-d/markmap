@@ -161,6 +161,116 @@ export const arbNodeWithNote = (): fc.Arbitrary<
 };
 
 /**
+ * Generate node with at least one type of note (inline or detailed)
+ * This ensures the node has notes for testing note icon display
+ */
+export const arbNodeWithAtLeastOneNote = (): fc.Arbitrary<
+  INode & { inlineNote?: string; detailedNote?: string }
+> => {
+  return fc.oneof(
+    // Node with only inline note
+    fc.record({
+      content: arbNodeContent(),
+      inlineNote: arbNodeContent(),
+      detailedNote: fc.constant(undefined),
+      children: fc.constant([]),
+      payload: fc.constant({}),
+      state: fc.record({
+        id: fc.integer({ min: 0, max: 10000 }),
+        path: fc.string({ minLength: 1, maxLength: 20 }),
+        key: fc.string({ minLength: 1, maxLength: 20 }),
+        depth: arbNodeDepth(),
+        size: fc.tuple(
+          fc.integer({ min: 50, max: 500 }),
+          fc.integer({ min: 20, max: 100 }),
+        ) as any,
+        rect: fc.record({
+          x: fc.integer({ min: 0, max: 1000 }),
+          y: fc.integer({ min: 0, max: 1000 }),
+          width: fc.integer({ min: 50, max: 500 }),
+          height: fc.integer({ min: 20, max: 100 }),
+        }),
+      }),
+    }),
+    // Node with only detailed note
+    fc.record({
+      content: arbNodeContent(),
+      inlineNote: fc.constant(undefined),
+      detailedNote: arbNodeContent(),
+      children: fc.constant([]),
+      payload: fc.constant({}),
+      state: fc.record({
+        id: fc.integer({ min: 0, max: 10000 }),
+        path: fc.string({ minLength: 1, maxLength: 20 }),
+        key: fc.string({ minLength: 1, maxLength: 20 }),
+        depth: arbNodeDepth(),
+        size: fc.tuple(
+          fc.integer({ min: 50, max: 500 }),
+          fc.integer({ min: 20, max: 100 }),
+        ) as any,
+        rect: fc.record({
+          x: fc.integer({ min: 0, max: 1000 }),
+          y: fc.integer({ min: 0, max: 1000 }),
+          width: fc.integer({ min: 50, max: 500 }),
+          height: fc.integer({ min: 20, max: 100 }),
+        }),
+      }),
+    }),
+    // Node with both notes
+    fc.record({
+      content: arbNodeContent(),
+      inlineNote: arbNodeContent(),
+      detailedNote: arbNodeContent(),
+      children: fc.constant([]),
+      payload: fc.constant({}),
+      state: fc.record({
+        id: fc.integer({ min: 0, max: 10000 }),
+        path: fc.string({ minLength: 1, maxLength: 20 }),
+        key: fc.string({ minLength: 1, maxLength: 20 }),
+        depth: arbNodeDepth(),
+        size: fc.tuple(
+          fc.integer({ min: 50, max: 500 }),
+          fc.integer({ min: 20, max: 100 }),
+        ) as any,
+        rect: fc.record({
+          x: fc.integer({ min: 0, max: 1000 }),
+          y: fc.integer({ min: 0, max: 1000 }),
+          width: fc.integer({ min: 50, max: 500 }),
+          height: fc.integer({ min: 20, max: 100 }),
+        }),
+      }),
+    }),
+  );
+};
+
+/**
+ * Generate node without any notes
+ */
+export const arbNodeWithoutNote = (): fc.Arbitrary<INode> => {
+  return fc.record({
+    content: arbNodeContent(),
+    children: fc.constant([]),
+    payload: fc.constant({}),
+    state: fc.record({
+      id: fc.integer({ min: 0, max: 10000 }),
+      path: fc.string({ minLength: 1, maxLength: 20 }),
+      key: fc.string({ minLength: 1, maxLength: 20 }),
+      depth: arbNodeDepth(),
+      size: fc.tuple(
+        fc.integer({ min: 50, max: 500 }),
+        fc.integer({ min: 20, max: 100 }),
+      ) as any,
+      rect: fc.record({
+        x: fc.integer({ min: 0, max: 1000 }),
+        y: fc.integer({ min: 0, max: 1000 }),
+        width: fc.integer({ min: 50, max: 500 }),
+        height: fc.integer({ min: 20, max: 100 }),
+      }),
+    }),
+  });
+};
+
+/**
  * Generate touch event coordinates (for mobile testing)
  */
 export const arbTouchCoordinates = (): fc.Arbitrary<

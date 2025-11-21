@@ -203,3 +203,35 @@ export function isPointInViewport(
     point.y <= viewport.y + viewport.height
   );
 }
+
+/**
+ * Check if a node should display a note icon
+ * A node should display a note icon if it has either an inline note or a detailed note
+ *
+ * Requirement 5.4: Note icon display
+ */
+export function shouldDisplayNoteIcon(
+  node: INode & { inlineNote?: string; detailedNote?: string },
+): boolean {
+  return !!(
+    node.inlineNote ||
+    node.detailedNote ||
+    node.payload?.inlineNote ||
+    node.payload?.detailedNote ||
+    node.payload?.hasNote
+  );
+}
+
+/**
+ * Generate HTML with note icon if node has notes
+ * This simulates the rendering logic for note icons
+ */
+export function renderNodeWithNoteIcon(
+  content: string,
+  hasNote: boolean,
+): string {
+  if (hasNote) {
+    return `${content}<span class="markmap-note-icon" title="This node has notes">📝</span>`;
+  }
+  return content;
+}

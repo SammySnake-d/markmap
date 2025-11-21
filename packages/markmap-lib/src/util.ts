@@ -262,25 +262,40 @@ export function extractBlockquoteContent(
 }
 
 /**
- * Decodes common HTML entities to their character equivalents.
+ * Decodes HTML entities to their character equivalents.
+ * Handles both named entities (&amp;) and numeric entities (&#39; and &#x27;).
  *
  * @param text - Text containing HTML entities
  * @returns Text with entities decoded
  */
 function decodeHtmlEntities(text: string): string {
+  // Named entities
   const entities: Record<string, string> = {
     '&amp;': '&',
     '&lt;': '<',
     '&gt;': '>',
     '&quot;': '"',
     '&#39;': "'",
+    '&apos;': "'",
     '&nbsp;': ' ',
   };
 
   let result = text;
+
+  // Decode named entities
   for (const [entity, char] of Object.entries(entities)) {
     result = result.replace(new RegExp(entity, 'g'), char);
   }
+
+  // Decode numeric entities (decimal): &#123;
+  result = result.replace(/&#(\d+);/g, (match, dec) => {
+    return String.fromCharCode(parseInt(dec, 10));
+  });
+
+  // Decode numeric entities (hexadecimal): &#x7B; or &#X7B;
+  result = result.replace(/&#[xX]([0-9a-fA-F]+);/g, (match, hex) => {
+    return String.fromCharCode(parseInt(hex, 16));
+  });
 
   return result;
 }
