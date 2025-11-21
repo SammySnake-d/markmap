@@ -401,7 +401,11 @@ export class Markmap {
     const mmGMerge = mmG
       .merge(mmGEnter)
       .attr('class', (d) =>
-        ['markmap-node', d.payload?.fold && 'markmap-fold']
+        [
+          'markmap-node',
+          d.payload?.fold && 'markmap-fold',
+          d.payload?.highlighted && 'markmap-search-highlight',
+        ]
           .filter(Boolean)
           .join(' '),
       );

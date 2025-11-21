@@ -109,6 +109,14 @@
   &-highlight rect {
     fill: var(--markmap-highlight-node-bg);
   }
+
+  /* Search highlight styles (Requirement 1.2) */
+  &-node.markmap-search-highlight {
+    > foreignObject {
+      background-color: var(--markmap-highlight-bg);
+      border-radius: 4px;
+    }
+  }
 }
 
 .markmap-dark .markmap {
