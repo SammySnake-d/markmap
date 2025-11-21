@@ -186,14 +186,14 @@ export class Toolbar {
     while (this.el.firstChild) {
       this.el.firstChild.remove();
     }
-    this.el.append(
-      mountDom(
-        <>
-          {this.showBrand && renderBrand()}
-          {items.map(renderItem)}
-        </>,
-      ),
-    );
+    const children = [
+      this.showBrand ? renderBrand() : null,
+      ...items.map(renderItem),
+    ].filter(Boolean);
+
+    children.forEach((child) => {
+      this.el.append(mountDom(child));
+    });
     return this.el;
   }
 }

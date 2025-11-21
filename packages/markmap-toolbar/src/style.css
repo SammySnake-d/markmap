@@ -1,56 +1,134 @@
+/* Excalidraw 风格的基础工具栏样式 */
 .mm-toolbar {
-  @apply flex items-center rounded bg-white border border-solid border-zinc-300 leading-none p-1 select-none;
+  @apply flex items-center rounded-xl bg-white border border-solid border-gray-200 leading-none p-2 select-none gap-1;
+  /* Excalidraw 风格的阴影 */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  @apply transition-all duration-200;
+
   &:hover {
-    @apply border-zinc-400;
+    @apply border-gray-300;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.06),
+      0 6px 16px rgba(0, 0, 0, 0.1);
   }
+
   svg {
     @apply block;
+    @apply transition-transform duration-200;
   }
+
   a {
     @apply inline-block no-underline;
   }
 
   &-brand {
+    @apply flex items-center gap-1.5;
+    @apply px-2 py-1 rounded-lg;
+    @apply transition-all duration-200;
+
     > img {
-      @apply w-4 h-4 align-middle;
+      @apply w-5 h-5 align-middle;
+      @apply transition-transform duration-200;
     }
     > span {
-      @apply px-1;
+      @apply text-sm font-medium;
     }
-  }
-  &-brand,
-  &-item {
-    &:not(:first-child) {
-      @apply ml-1;
-    }
-    > * {
-      @apply min-w-4 cursor-pointer text-zinc-400 text-center text-xs;
-    }
-    &.active,
+
     &:hover {
-      @apply bg-zinc-200 rounded;
-      > * {
-        @apply text-zinc-800;
+      @apply bg-gray-100;
+      > img {
+        @apply transform rotate-12;
       }
     }
+  }
+
+  &-item {
+    @apply flex items-center justify-center;
+    @apply w-9 h-9;
+    @apply rounded-lg;
+    @apply transition-all duration-200 ease-out;
+
+    > * {
+      @apply cursor-pointer text-gray-600 text-center;
+      @apply transition-colors duration-200;
+    }
+
+    &:hover {
+      @apply bg-gray-100;
+      @apply transform scale-105;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+
+      > * {
+        @apply text-gray-900;
+      }
+
+      svg {
+        @apply transform scale-110;
+      }
+    }
+
+    &:active {
+      @apply bg-gray-200;
+      @apply transform scale-95;
+    }
+
     &.active {
-      @apply bg-zinc-300;
+      @apply bg-blue-50;
+      @apply border border-blue-200;
+
+      > * {
+        @apply text-blue-600;
+      }
     }
   }
 }
 
+/* 暗色主题 - Excalidraw 风格 */
 .markmap-dark .mm-toolbar {
-  @apply bg-zinc-800 border-zinc-600 text-zinc-400;
+  @apply bg-gray-800 border-gray-700 text-gray-300;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 
   &:hover {
-    @apply border-zinc-500;
+    @apply border-gray-600;
+    box-shadow:
+      0 2px 4px rgba(0, 0, 0, 0.25),
+      0 6px 16px rgba(0, 0, 0, 0.35);
   }
 
-  > *:hover {
-    @apply bg-zinc-600;
+  .mm-toolbar-brand {
+    &:hover {
+      @apply bg-gray-700;
+    }
+  }
 
+  .mm-toolbar-item {
     > * {
-      @apply text-zinc-200;
+      @apply text-gray-300;
+    }
+
+    &:hover {
+      @apply bg-gray-700;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+      > * {
+        @apply text-gray-100;
+      }
+    }
+
+    &:active {
+      @apply bg-gray-600;
+    }
+
+    &.active {
+      @apply bg-blue-900 border-blue-700;
+
+      > * {
+        @apply text-blue-300;
+      }
     }
   }
 }

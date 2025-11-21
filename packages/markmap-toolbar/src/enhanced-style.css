@@ -1,0 +1,431 @@
+/* Enhanced Toolbar Styles - Excalidraw 风格 */
+
+/* 
+ * Excalidraw 风格设计原则：
+ * 1. 简洁的图标设计 - 使用清晰、易识别的图标
+ * 2. 清晰的视觉分组 - 通过间距和分隔符组织功能
+ * 3. 柔和的圆角 - 使用圆角设计，更加友好
+ * 4. 微妙的阴影 - 使用阴影增强层次感
+ * 5. 流畅的动画 - 使用平滑的过渡效果
+ * 6. 一致的配色 - 使用统一的配色方案
+ * 
+ * Requirements: 9.8 - 使用简洁图标和清晰分组
+ */
+
+.mm-enhanced-toolbar {
+  @apply fixed left-1/2 transform -translate-x-1/2 z-50;
+  @apply flex items-center justify-center gap-2;
+  @apply bg-white rounded-xl;
+  @apply border border-gray-200;
+  @apply px-3 py-2;
+  /* Excalidraw 风格的阴影 - 柔和且有层次 */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  /* 平滑的过渡效果 */
+  @apply transition-all duration-300 ease-in-out;
+}
+
+.mm-enhanced-toolbar:hover {
+  /* 悬停时增强阴影效果 */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+.mm-enhanced-toolbar-top {
+  @apply top-5;
+}
+
+.mm-enhanced-toolbar-bottom {
+  @apply bottom-5;
+}
+
+/* 工具栏项的增强样式 - Excalidraw 风格 */
+.mm-enhanced-toolbar .mm-toolbar-item {
+  @apply relative;
+  @apply flex items-center justify-center;
+  @apply w-9 h-9;
+  @apply rounded-lg;
+  @apply text-gray-600;
+  @apply cursor-pointer;
+  @apply transition-all duration-200 ease-out;
+  /* 初始状态无背景 */
+  @apply bg-transparent;
+}
+
+.mm-enhanced-toolbar .mm-toolbar-item:hover {
+  @apply bg-gray-100 text-gray-900;
+  @apply transform scale-105;
+  /* 悬停时的微妙阴影 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.mm-enhanced-toolbar .mm-toolbar-item:active {
+  @apply transform scale-95;
+  @apply bg-gray-200;
+}
+
+.mm-enhanced-toolbar .mm-toolbar-item.active {
+  @apply bg-blue-50 text-blue-600;
+  @apply border border-blue-200;
+}
+
+/* 工具栏项之间的分隔符 - 清晰的视觉分组 */
+.mm-enhanced-toolbar .mm-toolbar-divider {
+  @apply w-px h-6;
+  @apply bg-gray-200;
+  @apply mx-1;
+}
+
+/* 工具栏项的图标 */
+.mm-enhanced-toolbar .mm-toolbar-item svg {
+  @apply w-5 h-5;
+  @apply transition-transform duration-200;
+}
+
+.mm-enhanced-toolbar .mm-toolbar-item:hover svg {
+  @apply transform scale-110;
+}
+
+/* 品牌标识 - 固定在右上角 - Excalidraw 风格 */
+.mm-toolbar-brand-corner {
+  @apply fixed top-5 right-20 z-50;
+  @apply bg-white rounded-xl;
+  @apply border border-gray-200;
+  @apply px-3 py-2;
+  @apply transition-all duration-300 ease-in-out;
+  /* Excalidraw 风格的阴影 */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mm-toolbar-brand-corner:hover {
+  /* 悬停时增强阴影 */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.1);
+  @apply transform scale-105;
+  @apply border-gray-300;
+}
+
+.mm-brand-link {
+  @apply flex items-center gap-2;
+  @apply text-gray-700 no-underline;
+  @apply transition-colors duration-200;
+}
+
+.mm-brand-link:hover {
+  @apply text-gray-900;
+}
+
+.mm-brand-logo {
+  @apply w-6 h-6;
+  @apply transition-transform duration-200;
+}
+
+.mm-brand-link:hover .mm-brand-logo {
+  @apply transform rotate-12;
+}
+
+.mm-brand-text {
+  @apply text-sm font-medium;
+}
+
+/* 设置按钮 - 固定在右上角（品牌标识左侧） - Excalidraw 风格 */
+.mm-toolbar-settings-corner {
+  @apply fixed top-5 right-4 z-50;
+  @apply bg-white rounded-xl;
+  @apply border border-gray-200;
+  @apply transition-all duration-300 ease-in-out;
+  /* Excalidraw 风格的阴影 */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.mm-toolbar-settings-corner:hover {
+  /* 悬停时增强阴影 */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.1);
+  @apply transform scale-105;
+  @apply border-gray-300;
+}
+
+.mm-settings-button {
+  @apply w-10 h-10;
+  @apply flex items-center justify-center;
+  @apply bg-transparent border-none;
+  @apply text-gray-600 cursor-pointer;
+  @apply rounded-lg;
+  @apply transition-all duration-200;
+}
+
+.mm-settings-button:hover {
+  @apply text-blue-600 bg-blue-50;
+}
+
+.mm-settings-button:active {
+  @apply transform scale-90;
+  @apply bg-blue-100;
+}
+
+.mm-settings-button svg {
+  @apply transition-transform duration-300;
+}
+
+.mm-settings-button:hover svg {
+  @apply transform rotate-90;
+}
+
+/* 响应式布局 - 小屏幕设备 - Excalidraw 风格 */
+/* Requirements: 11.7 - 在小屏幕设备上调整工具栏布局 */
+
+/* 平板设备 (768px 以下) */
+@media (max-width: 768px) {
+  .mm-enhanced-toolbar {
+    @apply left-4 right-4 transform-none;
+    @apply gap-1.5;
+    @apply px-2.5 py-1.5;
+  }
+
+  /* 调整工具栏项的大小 */
+  .mm-enhanced-toolbar .mm-toolbar-item {
+    @apply w-8 h-8;
+  }
+
+  .mm-enhanced-toolbar .mm-toolbar-item svg {
+    @apply w-4.5 h-4.5;
+  }
+
+  /* 调整品牌标识 */
+  .mm-toolbar-brand-corner {
+    @apply top-4 right-16;
+    @apply px-2.5 py-1.5;
+    @apply rounded-lg;
+  }
+
+  .mm-brand-logo {
+    @apply w-5 h-5;
+  }
+
+  .mm-brand-text {
+    @apply text-xs;
+  }
+
+  /* 调整设置按钮 */
+  .mm-toolbar-settings-corner {
+    @apply top-4 right-3;
+    @apply rounded-lg;
+  }
+
+  .mm-settings-button {
+    @apply w-9 h-9;
+  }
+}
+
+/* 小屏幕手机 (640px 以下) */
+@media (max-width: 640px) {
+  .mm-enhanced-toolbar {
+    @apply left-3 right-3 transform-none;
+    @apply flex-wrap justify-center;
+    @apply gap-1;
+    @apply px-2 py-1.5;
+    @apply rounded-lg;
+  }
+
+  /* 在小屏幕上调整工具栏项 */
+  .mm-enhanced-toolbar .mm-toolbar-item {
+    @apply w-8 h-8;
+    @apply rounded-md;
+  }
+
+  /* 在小屏幕上调整品牌标识和设置按钮的位置 */
+  .mm-toolbar-brand-corner {
+    @apply top-3 right-14;
+    @apply px-2 py-1;
+    @apply rounded-lg;
+  }
+
+  .mm-brand-text {
+    @apply hidden;
+  }
+
+  .mm-brand-logo {
+    @apply w-4.5 h-4.5;
+  }
+
+  .mm-toolbar-settings-corner {
+    @apply top-3 right-2;
+    @apply rounded-lg;
+  }
+
+  .mm-settings-button {
+    @apply w-8 h-8;
+  }
+}
+
+/* 超小屏幕手机 (480px 以下) */
+@media (max-width: 480px) {
+  .mm-enhanced-toolbar {
+    @apply left-2 right-2;
+    @apply px-1.5 py-1;
+    @apply gap-0.5;
+    @apply rounded-md;
+  }
+
+  /* 进一步缩小工具栏项 */
+  .mm-enhanced-toolbar .mm-toolbar-item {
+    @apply w-7 h-7;
+    @apply rounded;
+  }
+
+  .mm-enhanced-toolbar .mm-toolbar-item svg {
+    @apply w-4 h-4;
+  }
+
+  /* 进一步调整品牌标识和设置按钮 */
+  .mm-toolbar-brand-corner {
+    @apply top-2 right-12;
+    @apply px-1.5 py-0.5;
+    @apply rounded-md;
+  }
+
+  .mm-brand-logo {
+    @apply w-4 h-4;
+  }
+
+  .mm-toolbar-settings-corner {
+    @apply top-2 right-1.5;
+    @apply rounded-md;
+  }
+
+  .mm-settings-button {
+    @apply w-7 h-7;
+  }
+
+  /* 在超小屏幕上，可以考虑使用折叠菜单 */
+  .mm-enhanced-toolbar.mm-toolbar-collapsed {
+    @apply flex-col;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mm-enhanced-toolbar {
+    @apply top-3;
+    @apply py-1;
+  }
+
+  .mm-toolbar-brand-corner,
+  .mm-toolbar-settings-corner {
+    @apply top-3;
+  }
+}
+
+/* 紧凑布局模式 - 通过 JavaScript 动态添加 */
+.mm-toolbar-compact {
+  @apply flex-wrap;
+  @apply gap-1;
+}
+
+.mm-toolbar-compact .mm-toolbar-item {
+  @apply flex-shrink-0;
+}
+
+/* 触摸设备优化 - 增加点击区域 */
+@media (hover: none) and (pointer: coarse) {
+  .mm-enhanced-toolbar .mm-toolbar-item {
+    @apply min-w-10 min-h-10;
+    /* 增加触摸区域的视觉反馈 */
+    @apply active:bg-gray-200;
+  }
+
+  .mm-settings-button {
+    @apply min-w-11 min-h-11;
+  }
+
+  .mm-enhanced-toolbar {
+    @apply gap-2;
+  }
+
+  /* 触摸设备上的悬停效果调整 */
+  .mm-enhanced-toolbar .mm-toolbar-item:hover {
+    @apply transform-none;
+  }
+}
+
+/* 暗色主题支持 - Excalidraw 风格 */
+.markmap-dark .mm-enhanced-toolbar {
+  @apply bg-gray-800 border-gray-700;
+  /* 暗色主题的阴影更深 */
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.markmap-dark .mm-enhanced-toolbar:hover {
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-enhanced-toolbar .mm-toolbar-item {
+  @apply text-gray-300;
+}
+
+.markmap-dark .mm-enhanced-toolbar .mm-toolbar-item:hover {
+  @apply bg-gray-700 text-gray-100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-enhanced-toolbar .mm-toolbar-item:active {
+  @apply bg-gray-600;
+}
+
+.markmap-dark .mm-enhanced-toolbar .mm-toolbar-item.active {
+  @apply bg-blue-900 text-blue-300;
+  @apply border-blue-700;
+}
+
+.markmap-dark .mm-toolbar-brand-corner,
+.markmap-dark .mm-toolbar-settings-corner {
+  @apply bg-gray-800 border-gray-700;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-toolbar-brand-corner:hover,
+.markmap-dark .mm-toolbar-settings-corner:hover {
+  @apply border-gray-600;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.markmap-dark .mm-brand-link {
+  @apply text-gray-200;
+}
+
+.markmap-dark .mm-brand-link:hover {
+  @apply text-gray-100;
+}
+
+.markmap-dark .mm-settings-button {
+  @apply text-gray-300;
+}
+
+.markmap-dark .mm-settings-button:hover {
+  @apply text-blue-400 bg-blue-900;
+}
+
+.markmap-dark .mm-settings-button:active {
+  @apply bg-blue-800;
+}

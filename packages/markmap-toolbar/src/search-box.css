@@ -1,0 +1,145 @@
+/* SearchBox Styles - Excalidraw 风格 */
+
+.mm-search-box {
+  @apply inline-flex items-center;
+  @apply mr-3;
+}
+
+.mm-search-box-wrapper {
+  @apply relative flex items-center;
+  @apply bg-white rounded-xl;
+  @apply border border-gray-200;
+  @apply transition-all duration-200 ease-out;
+  min-width: 220px;
+  /* Excalidraw 风格的微妙阴影 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.mm-search-box-wrapper:hover {
+  @apply border-gray-300;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mm-search-box-wrapper:focus-within {
+  @apply border-blue-500;
+  /* Excalidraw 风格的焦点效果 */
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.15),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 搜索图标 */
+.mm-search-icon {
+  @apply absolute left-3;
+  @apply flex items-center justify-center;
+  @apply text-gray-400;
+  @apply pointer-events-none;
+  @apply transition-colors duration-200;
+}
+
+.mm-search-box-wrapper:focus-within .mm-search-icon {
+  @apply text-blue-500;
+}
+
+/* 输入框 */
+.mm-search-input {
+  @apply w-full;
+  @apply pl-10 pr-10 py-2;
+  @apply text-sm;
+  @apply bg-transparent;
+  @apply border-0 outline-none;
+  @apply text-gray-700;
+  @apply transition-all duration-200;
+}
+
+.mm-search-input::placeholder {
+  @apply text-gray-400;
+}
+
+.mm-search-input:focus::placeholder {
+  @apply text-gray-300;
+}
+
+/* 清除按钮 */
+.mm-search-clear {
+  @apply absolute right-2;
+  @apply flex items-center justify-center;
+  @apply w-6 h-6;
+  @apply rounded-md;
+  @apply text-gray-400;
+  @apply bg-transparent;
+  @apply border-0;
+  @apply cursor-pointer;
+  @apply transition-all duration-200 ease-out;
+}
+
+.mm-search-clear:hover {
+  @apply text-gray-600 bg-gray-100;
+  @apply transform scale-110;
+}
+
+.mm-search-clear:active {
+  @apply bg-gray-200;
+  @apply transform scale-95;
+}
+
+/* 响应式布局 - 小屏幕设备 */
+@media (max-width: 640px) {
+  .mm-search-box-wrapper {
+    min-width: 150px;
+  }
+
+  .mm-search-input {
+    @apply text-xs;
+  }
+}
+
+/* 暗色主题支持 - Excalidraw 风格 */
+.markmap-dark .mm-search-box-wrapper {
+  @apply bg-gray-800 border-gray-700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-search-box-wrapper:hover {
+  @apply border-gray-600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.markmap-dark .mm-search-box-wrapper:focus-within {
+  @apply border-blue-400;
+  box-shadow:
+    0 0 0 3px rgba(96, 165, 250, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.markmap-dark .mm-search-input {
+  @apply text-gray-200;
+}
+
+.markmap-dark .mm-search-input::placeholder {
+  @apply text-gray-500;
+}
+
+.markmap-dark .mm-search-input:focus::placeholder {
+  @apply text-gray-600;
+}
+
+.markmap-dark .mm-search-icon {
+  @apply text-gray-500;
+}
+
+.markmap-dark .mm-search-box-wrapper:focus-within .mm-search-icon {
+  @apply text-blue-400;
+}
+
+.markmap-dark .mm-search-clear {
+  @apply text-gray-500;
+}
+
+.markmap-dark .mm-search-clear:hover {
+  @apply text-gray-300 bg-gray-700;
+}
+
+.markmap-dark .mm-search-clear:active {
+  @apply bg-gray-600;
+}

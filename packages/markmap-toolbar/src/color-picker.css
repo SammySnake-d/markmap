@@ -1,0 +1,225 @@
+/* ColorPicker Styles - 颜色主题选择器 - Excalidraw 风格 */
+
+.mm-color-picker {
+  @apply relative inline-block;
+}
+
+/* 触发按钮 - Excalidraw 风格 */
+.mm-color-trigger {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer;
+  @apply bg-transparent border-0;
+  @apply text-gray-600 text-sm font-medium;
+  @apply transition-all duration-200 ease-out;
+}
+
+.mm-color-trigger:hover {
+  @apply bg-gray-100 text-gray-900;
+  @apply transform scale-105;
+  /* Excalidraw 风格的微妙阴影 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.mm-color-trigger:active {
+  @apply bg-gray-200;
+  @apply transform scale-95;
+}
+
+.mm-color-picker-open .mm-color-trigger {
+  @apply bg-blue-50 text-blue-600;
+  /* Excalidraw 风格的焦点效果 */
+  box-shadow:
+    0 0 0 2px rgba(59, 130, 246, 0.2),
+    0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.mm-color-label {
+  @apply hidden sm:inline;
+}
+
+.mm-color-arrow {
+  @apply transition-transform duration-200;
+}
+
+.mm-color-picker-open .mm-color-arrow {
+  @apply transform rotate-180;
+}
+
+/* 下拉菜单 - Excalidraw 风格 */
+.mm-color-dropdown {
+  @apply absolute z-50 mt-2;
+  @apply bg-white border border-solid border-gray-200 rounded-xl;
+  @apply min-w-64 max-h-96 overflow-y-auto;
+  /* Excalidraw 风格的阴影 */
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 6px 16px rgba(0, 0, 0, 0.1),
+    0 12px 32px rgba(0, 0, 0, 0.08);
+  /* 平滑的动画 */
+  @apply transition-all duration-200 ease-out;
+}
+
+.mm-color-dropdown-bottom {
+  @apply top-full left-0;
+  transform-origin: top left;
+}
+
+.mm-color-dropdown-top {
+  @apply bottom-full left-0 mb-2;
+  transform-origin: bottom left;
+}
+
+/* 菜单项 - Excalidraw 风格 */
+.mm-color-item {
+  @apply w-full flex items-center justify-between gap-3 px-4 py-3;
+  @apply text-left cursor-pointer;
+  @apply border-b border-solid border-gray-100;
+  @apply transition-all duration-150 ease-out;
+  @apply rounded-lg;
+  @apply mx-1 my-0.5;
+}
+
+.mm-color-item:last-child {
+  @apply border-b-0;
+}
+
+.mm-color-item-active {
+  @apply bg-blue-50;
+}
+
+.mm-color-item:hover {
+  @apply bg-gray-100;
+  @apply transform scale-102;
+}
+
+.mm-color-item-active:hover {
+  @apply bg-blue-100;
+}
+
+/* 颜色方案名称 */
+.mm-color-item-name {
+  @apply text-sm font-medium text-gray-700 capitalize;
+  @apply flex-shrink-0;
+}
+
+/* 颜色预览 */
+.mm-color-preview {
+  @apply flex items-center gap-1.5 flex-1;
+}
+
+.mm-color-preview-dot {
+  @apply w-5 h-5 rounded-full border-2 border-solid border-white;
+  @apply transition-all duration-200;
+  /* 添加微妙的阴影 */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.mm-color-item:hover .mm-color-preview-dot {
+  @apply transform scale-110;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 选中标记 */
+.mm-color-check {
+  @apply text-blue-600 flex-shrink-0;
+  @apply transition-transform duration-200;
+}
+
+.mm-color-item-active .mm-color-check {
+  @apply transform scale-110;
+}
+
+/* 暗色主题支持 - Excalidraw 风格 */
+.markmap-dark .mm-color-trigger {
+  @apply text-gray-300;
+}
+
+.markmap-dark .mm-color-trigger:hover {
+  @apply bg-gray-700 text-gray-100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-color-picker-open .mm-color-trigger {
+  @apply bg-blue-900 text-blue-300;
+  box-shadow:
+    0 0 0 2px rgba(96, 165, 250, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-color-dropdown {
+  @apply bg-gray-800 border-gray-700;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.35),
+    0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-color-item {
+  @apply border-gray-700;
+}
+
+.markmap-dark .mm-color-item:hover {
+  @apply bg-gray-700;
+}
+
+.markmap-dark .mm-color-item-active {
+  @apply bg-blue-900;
+}
+
+.markmap-dark .mm-color-item-active:hover {
+  @apply bg-blue-800;
+}
+
+.markmap-dark .mm-color-item-name {
+  @apply text-gray-200;
+}
+
+.markmap-dark .mm-color-preview-dot {
+  @apply border-gray-700;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .mm-color-item:hover .mm-color-preview-dot {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.markmap-dark .mm-color-check {
+  @apply text-blue-400;
+}
+
+/* 响应式布局 - 小屏幕设备 */
+@media (max-width: 640px) {
+  .mm-color-dropdown {
+    @apply min-w-48;
+  }
+
+  .mm-color-item {
+    @apply px-3 py-2;
+  }
+
+  .mm-color-preview-dot {
+    @apply w-3 h-3;
+  }
+}
+
+/* 滚动条样式 */
+.mm-color-dropdown::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.mm-color-dropdown::-webkit-scrollbar-track {
+  @apply bg-zinc-100 rounded;
+}
+
+.mm-color-dropdown::-webkit-scrollbar-thumb {
+  @apply bg-zinc-400 rounded;
+  @apply hover:bg-zinc-500;
+}
+
+.markmap-dark .mm-color-dropdown::-webkit-scrollbar-track {
+  @apply bg-zinc-700;
+}
+
+.markmap-dark .mm-color-dropdown::-webkit-scrollbar-thumb {
+  @apply bg-zinc-500;
+  @apply hover:bg-zinc-400;
+}
