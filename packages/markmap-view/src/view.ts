@@ -1141,6 +1141,285 @@ export class Markmap {
     }
   }
 
+  /**
+   * Exports the mindmap (or a subtree) to Markdown format.
+   *
+   * This method converts the node tree back to Markdown, preserving:
+   * - Hierarchical structure with proper indentation
+   * - Inline notes (using colon separator)
+   * - Detailed notes (using blockquote format)
+   * - Escape characters for special characters
+   *
+   * Requirements:
+   * - 4.1: Copy node subtree as Markdown to clipboard
+   * - 4.2: Preserve hierarchical structure in export
+   *
+   * @param node - Optional node to export. If not provided, exports the entire tree.
+   * @returns Markdown string representation of the node tree
+   */
+  exportAsMarkdown(node?: INode): string {
+    // If no node is provided, use the root node
+    const targetNode = node || this.state.data;
+
+    // If there's no data, return empty string
+    if (!targetNode) {
+      return '';
+    }
+
+    // Use the utility function to export the node tree
+    return exportNodeAsMarkdown(targetNode);
+  }
+
+  /**
+   * Exports the mindmap as SVG string.
+   *
+   * This method returns the SVG content as a string, which can be saved
+   * as an SVG file or used for further processing.
+   *
+   * Requirements:
+   * - 4.5: Provide export as PNG, JPG, or SVG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   *
+   * @returns SVG string representation of the mindmap
+   */
+  exportAsSVG(): string {
+    const svgNode = this.svg.node();
+    if (!svgNode) {
+      throw new Error('SVG element not found');
+    }
+
+    // Clone the SVG node to avoid modifying the original
+    const clonedSvg = svgNode.cloneNode(true) as SVGElement;
+
+    // Get the bounding box of the content
+    const { x1, y1, x2, y2 } = this.state.rect;
+    const width = x2 - x1;
+    const height = y2 - y1;
+
+    // Set viewBox to match content bounds
+    clonedSvg.setAttribute('viewBox', `${x1} ${y1} ${width} ${height}`);
+    clonedSvg.setAttribute('width', width.toString());
+    clonedSvg.setAttribute('height', height.toString());
+
+    // Add XML namespace if not present
+    if (!clonedSvg.hasAttribute('xmlns')) {
+      clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    }
+
+    // Serialize the SVG to string
+    const serializer = new XMLSerializer();
+    let svgString = serializer.serializeToString(clonedSvg);
+
+    // Add inline styles from the style node
+    const styleContent = this.getStyleContent();
+    if (styleContent) {
+      // Insert style content into the SVG
+      svgString = svgString.replace(
+        '<svg',
+        `<svg><defs><style type="text/css"><![CDATA[${styleContent}]]></style></defs>`,
+      );
+    }
+
+    return svgString;
+  }
+
+  /**
+   * Exports the mindmap as PNG image.
+   *
+   * This method converts the SVG to a PNG blob using a canvas element.
+   *
+   * Requirements:
+   * - 4.5: Provide export as PNG, JPG, or SVG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   *
+   * @returns Promise that resolves to a PNG Blob
+   */
+  async exportAsPNG(): Promise<Blob> {
+    return this._exportAsRasterImage('image/png');
+  }
+
+  /**
+   * Exports the mindmap as JPG image.
+   *
+   * This method converts the SVG to a JPG blob using a canvas element.
+   *
+   * Requirements:
+   * - 4.5: Provide export as PNG, JPG, or SVG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   *
+   * @returns Promise that resolves to a JPG Blob
+   */
+  async exportAsJPG(): Promise<Blob> {
+    return this._exportAsRasterImage('image/jpeg');
+  }
+
+  /**
+   * Internal helper method to export mindmap as raster image (PNG or JPG).
+   *
+   * This method:
+   * 1. Gets the SVG string
+   * 2. Creates an Image element from the SVG
+   * 3. Draws the image onto a canvas
+   * 4. Converts the canvas to a Blob
+   *
+   * @param mimeType - The MIME type for the output image ('image/png' or 'image/jpeg')
+   * @returns Promise that resolves to an image Blob
+   */
+  private async _exportAsRasterImage(
+    mimeType: 'image/png' | 'image/jpeg',
+  ): Promise<Blob> {
+    // Get SVG string
+    const svgString = this.exportAsSVG();
+
+    // Get dimensions from state
+    const { x1, y1, x2, y2 } = this.state.rect;
+    const width = x2 - x1;
+    const height = y2 - y1;
+
+    // Create a canvas element
+    const canvas = document.createElement('canvas');
+    const scale = 2; // Use 2x scale for better quality
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      throw new Error('Failed to get canvas context');
+    }
+
+    // Scale the context for high-DPI rendering
+    ctx.scale(scale, scale);
+
+    // For JPG, fill background with white (JPG doesn't support transparency)
+    if (mimeType === 'image/jpeg') {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Create an image from the SVG string
+    const img = new Image();
+    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(svgBlob);
+
+    return new Promise((resolve, reject) => {
+      img.onload = () => {
+        try {
+          // Draw the image onto the canvas
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convert canvas to blob
+          canvas.toBlob(
+            (blob) => {
+              URL.revokeObjectURL(url);
+              if (blob) {
+                resolve(blob);
+              } else {
+                reject(new Error('Failed to create blob from canvas'));
+              }
+            },
+            mimeType,
+            0.95, // Quality for JPEG
+          );
+        } catch (error) {
+          URL.revokeObjectURL(url);
+          reject(error);
+        }
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Failed to load SVG image'));
+      };
+
+      img.src = url;
+    });
+  }
+
+  /**
+   * Triggers browser download for a blob.
+   *
+   * This helper method creates a temporary anchor element and triggers
+   * a download with the specified filename.
+   *
+   * Requirements:
+   * - 4.7: Trigger browser download for exported image file
+   *
+   * @param blob - The blob to download
+   * @param filename - The filename for the download
+   */
+  private _triggerDownload(blob: Blob, filename: string): void {
+    // Create a temporary URL for the blob
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary anchor element
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.style.display = 'none';
+
+    // Add to document, click, and remove
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Clean up the URL after a short delay
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 100);
+  }
+
+  /**
+   * Downloads the mindmap as PNG file.
+   *
+   * This method exports the mindmap as PNG and triggers a browser download.
+   *
+   * Requirements:
+   * - 4.5: Provide export as PNG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   * - 4.7: Trigger browser download for exported image file
+   *
+   * @param filename - Optional filename for the download (default: 'mindmap.png')
+   */
+  async downloadAsPNG(filename: string = 'mindmap.png'): Promise<void> {
+    const blob = await this.exportAsPNG();
+    this._triggerDownload(blob, filename);
+  }
+
+  /**
+   * Downloads the mindmap as JPG file.
+   *
+   * This method exports the mindmap as JPG and triggers a browser download.
+   *
+   * Requirements:
+   * - 4.5: Provide export as JPG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   * - 4.7: Trigger browser download for exported image file
+   *
+   * @param filename - Optional filename for the download (default: 'mindmap.jpg')
+   */
+  async downloadAsJPG(filename: string = 'mindmap.jpg'): Promise<void> {
+    const blob = await this.exportAsJPG();
+    this._triggerDownload(blob, filename);
+  }
+
+  /**
+   * Downloads the mindmap as SVG file.
+   *
+   * This method exports the mindmap as SVG and triggers a browser download.
+   *
+   * Requirements:
+   * - 4.5: Provide export as SVG format
+   * - 4.6: Generate image file containing current visible mindmap content
+   * - 4.7: Trigger browser download for exported image file
+   *
+   * @param filename - Optional filename for the download (default: 'mindmap.svg')
+   */
+  downloadAsSVG(filename: string = 'mindmap.svg'): void {
+    const svgString = this.exportAsSVG();
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    this._triggerDownload(blob, filename);
+  }
+
   destroy() {
     this.svg.on('.zoom', null);
     this.svg.html(null);
