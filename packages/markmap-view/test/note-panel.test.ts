@@ -231,6 +231,88 @@ describe('NotePanel', () => {
       ) as HTMLTextAreaElement;
       expect(textarea.value).toBe('Original content');
     });
+
+    it('should have an edit button', () => {
+      const node = createTestNode({ inlineNote: 'Test note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+
+      const editButton = container.querySelector('.markmap-note-panel-edit');
+      expect(editButton).toBeTruthy();
+    });
+
+    it('should toggle edit mode when edit button is clicked', () => {
+      const node = createTestNode({ inlineNote: 'Test note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+
+      const editButton = container.querySelector(
+        '.markmap-note-panel-edit',
+      ) as HTMLElement;
+
+      // Initially not in edit mode
+      expect(container.querySelector('textarea')).toBeNull();
+
+      // Click to enable edit mode
+      editButton.click();
+      expect(container.querySelector('textarea')).toBeTruthy();
+
+      // Click again to disable edit mode
+      editButton.click();
+      expect(container.querySelector('textarea')).toBeNull();
+    });
+
+    it('should update edit button appearance when in edit mode', () => {
+      const node = createTestNode({ inlineNote: 'Test note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+
+      const editButton = container.querySelector(
+        '.markmap-note-panel-edit',
+      ) as HTMLElement;
+
+      // Initially shows edit icon
+      expect(editButton.textContent).toBe('✏️');
+      expect(editButton.title).toBe('编辑备注');
+
+      // Click to enable edit mode
+      editButton.click();
+
+      // Should show checkmark icon
+      expect(editButton.textContent).toBe('✓');
+      expect(editButton.title).toBe('完成编辑');
+    });
+
+    it('should reset edit mode when showing a new node', () => {
+      const node1 = createTestNode({ inlineNote: 'Note 1' });
+      const node2 = createTestNode({ inlineNote: 'Note 2' });
+
+      notePanel.show(node1, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      // Should be in edit mode
+      expect(container.querySelector('textarea')).toBeTruthy();
+
+      // Show a different node
+      notePanel.show(node2, { x: 100, y: 100 });
+
+      // Should not be in edit mode anymore
+      expect(container.querySelector('textarea')).toBeNull();
+    });
+
+    it('should enable edit mode for both inline and detailed notes', () => {
+      const node = createTestNode({
+        inlineNote: 'Inline note',
+        detailedNote: 'Detailed note',
+      });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      // Should have two textareas
+      const textareas = container.querySelectorAll('textarea');
+      expect(textareas.length).toBe(2);
+    });
   });
 
   describe('Event Callbacks', () => {
@@ -527,6 +609,534 @@ describe('NotePanel', () => {
       // Inline notes should not have HTML formatting
       expect(inlineContent.querySelector('strong')).toBeNull();
       expect(inlineContent.textContent).toBe('This is **not bold**');
+    });
+  });
+
+  describe('Real-time Auto-save (Task 44 - Requirement 5.8)', () => {
+    it('should auto-save after typing with debounce delay', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Trigger input event (simulating user typing)
+      textarea.dispatchEvent(new Event('input'));
+
+      // Should not save immediately
+      expect(onEditMock).not.toHaveBeenCalled();
+
+      // Wait for debounce delay (500ms + buffer)
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should have auto-saved after delay
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Updated note', undefined);
+    });
+
+    it('should debounce multiple rapid inputs', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+
+      // Simulate rapid typing
+      textarea.value = 'U';
+      textarea.dispatchEvent(new Event('input'));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      textarea.value = 'Up';
+      textarea.dispatchEvent(new Event('input'));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      textarea.value = 'Upd';
+      textarea.dispatchEvent(new Event('input'));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      textarea.value = 'Updated';
+      textarea.dispatchEvent(new Event('input'));
+
+      // Should not have saved yet
+      expect(onEditMock).not.toHaveBeenCalled();
+
+      // Wait for debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should have saved only once with final value
+      expect(onEditMock).toHaveBeenCalledTimes(1);
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Updated', undefined);
+    });
+
+    it('should cancel auto-save when textarea loses focus and save immediately', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Trigger input event
+      textarea.dispatchEvent(new Event('input'));
+
+      // Immediately blur (before debounce delay)
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      textarea.dispatchEvent(new Event('blur'));
+
+      // Should have saved immediately on blur
+      expect(onEditMock).toHaveBeenCalledTimes(1);
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Updated note', undefined);
+
+      // Wait for what would have been the debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should still only have been called once (debounced save was cancelled)
+      expect(onEditMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should cancel auto-save when panel is hidden', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Trigger input event
+      textarea.dispatchEvent(new Event('input'));
+
+      // Hide panel before debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      notePanel.hide();
+
+      // Wait for what would have been the debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should not have saved (auto-save was cancelled)
+      expect(onEditMock).not.toHaveBeenCalled();
+    });
+
+    it('should cancel auto-save when panel is destroyed', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Trigger input event
+      textarea.dispatchEvent(new Event('input'));
+
+      // Destroy panel before debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      notePanel.destroy();
+
+      // Wait for what would have been the debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should not have saved (auto-save was cancelled)
+      expect(onEditMock).not.toHaveBeenCalled();
+    });
+
+    it('should auto-save detailed note edits', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ detailedNote: 'Original detailed note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated detailed note';
+
+      // Trigger input event
+      textarea.dispatchEvent(new Event('input'));
+
+      // Wait for debounce delay
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      // Should have auto-saved
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        undefined,
+        'Updated detailed note',
+      );
+    });
+
+    it('should handle auto-save for both notes independently', async () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({
+        inlineNote: 'Original inline',
+        detailedNote: 'Original detailed',
+      });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textareas = container.querySelectorAll('textarea');
+
+      // Edit inline note
+      (textareas[0] as HTMLTextAreaElement).value = 'Updated inline';
+      textareas[0].dispatchEvent(new Event('input'));
+
+      // Wait for debounce
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        'Updated inline',
+        'Original detailed',
+      );
+
+      onEditMock.mockClear();
+
+      // Edit detailed note
+      (textareas[1] as HTMLTextAreaElement).value = 'Updated detailed';
+      textareas[1].dispatchEvent(new Event('input'));
+
+      // Wait for debounce
+      await new Promise((resolve) => setTimeout(resolve, 600));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        'Updated inline',
+        'Updated detailed',
+      );
+    });
+  });
+
+  describe('Edit Mode - Additional Tests (Task 43)', () => {
+    it('should save inline note edit when textarea loses focus', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original inline note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated inline note';
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        'Updated inline note',
+        undefined,
+      );
+    });
+
+    it('should save detailed note edit when textarea loses focus', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ detailedNote: 'Original detailed note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated detailed note';
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        undefined,
+        'Updated detailed note',
+      );
+    });
+
+    it('should save both notes when editing both simultaneously', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({
+        inlineNote: 'Original inline',
+        detailedNote: 'Original detailed',
+      });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textareas = container.querySelectorAll('textarea');
+      expect(textareas.length).toBe(2);
+
+      // Edit inline note first
+      (textareas[0] as HTMLTextAreaElement).value = 'Updated inline';
+      textareas[0].dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        'Updated inline',
+        'Original detailed',
+      );
+
+      // Edit detailed note
+      (textareas[1] as HTMLTextAreaElement).value = 'Updated detailed';
+      textareas[1].dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(
+        node,
+        'Updated inline',
+        'Updated detailed',
+      );
+    });
+
+    it('should preserve textarea content when toggling edit mode', () => {
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Modified note';
+
+      // Disable edit mode
+      notePanel.disableEdit();
+
+      // The content should be displayed as text
+      const inlineContent = container.querySelector(
+        '.markmap-note-inline-content',
+      ) as HTMLElement;
+      expect(inlineContent.textContent).toBe('Modified note');
+    });
+
+    it('should handle empty note after edit', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = '';
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(node, '', undefined);
+    });
+
+    it('should handle whitespace-only note after edit', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = '   \n\n   ';
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(node, '   \n\n   ', undefined);
+    });
+
+    it('should handle very long text in edit mode', () => {
+      const longText = 'A'.repeat(5000);
+      const node = createTestNode({ inlineNote: 'Short note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = longText;
+
+      expect(textarea.value).toBe(longText);
+      expect(textarea.value.length).toBe(5000);
+    });
+
+    it('should handle special characters in edit mode', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      const specialText = '<script>alert("test")</script>\n& < > " \'';
+      textarea.value = specialText;
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(node, specialText, undefined);
+    });
+
+    it('should focus textarea when entering edit mode', () => {
+      const node = createTestNode({ inlineNote: 'Test note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+
+      // Check if textarea exists and can receive focus
+      expect(textarea).toBeTruthy();
+      expect(document.activeElement).toBe(textarea);
+    });
+
+    it('should not call onEdit if no changes were made', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+
+      // Don't change the value, just blur
+      textarea.dispatchEvent(new Event('blur'));
+
+      // onEdit should still be called (auto-save behavior)
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Original note', undefined);
+    });
+
+    it('should handle rapid edit mode toggling', () => {
+      const node = createTestNode({ inlineNote: 'Test note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+
+      // Toggle multiple times rapidly
+      notePanel.enableEdit();
+      notePanel.disableEdit();
+      notePanel.enableEdit();
+      notePanel.disableEdit();
+      notePanel.enableEdit();
+
+      // Should end up in edit mode
+      const textarea = container.querySelector('textarea');
+      expect(textarea).toBeTruthy();
+    });
+
+    it('should maintain edit state per note type', () => {
+      const node = createTestNode({
+        inlineNote: 'Inline note',
+        detailedNote: 'Detailed note',
+      });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textareas = container.querySelectorAll('textarea');
+
+      // Both should be editable
+      expect(textareas.length).toBe(2);
+      expect((textareas[0] as HTMLTextAreaElement).value).toBe('Inline note');
+      expect((textareas[1] as HTMLTextAreaElement).value).toBe('Detailed note');
+    });
+
+    it('should handle Ctrl+Enter to save (inline note)', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Simulate Ctrl+Enter
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        ctrlKey: true,
+      });
+      textarea.dispatchEvent(event);
+
+      // Should trigger blur which saves
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Updated note', undefined);
+    });
+
+    it('should handle Cmd+Enter to save (inline note)', () => {
+      const onEditMock = vi.fn();
+      notePanel.onEdit = onEditMock;
+
+      const node = createTestNode({ inlineNote: 'Original note' });
+
+      notePanel.show(node, { x: 100, y: 100 });
+      notePanel.enableEdit();
+
+      const textarea = container.querySelector(
+        'textarea',
+      ) as HTMLTextAreaElement;
+      textarea.value = 'Updated note';
+
+      // Simulate Cmd+Enter (Mac)
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        metaKey: true,
+      });
+      textarea.dispatchEvent(event);
+
+      // Should trigger blur which saves
+      textarea.dispatchEvent(new Event('blur'));
+
+      expect(onEditMock).toHaveBeenCalledWith(node, 'Updated note', undefined);
     });
   });
 });

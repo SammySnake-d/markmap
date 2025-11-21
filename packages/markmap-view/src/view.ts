@@ -28,6 +28,7 @@ import {
   IMarkmapState,
   IPadding,
 } from './types';
+import { UndoManager } from './undo-manager';
 import { childSelector, simpleHash } from './util';
 
 export const globalCSS = css;
@@ -69,6 +70,12 @@ export class Markmap {
 
   private _disposeList: (() => void)[] = [];
 
+  /**
+   * UndoManager for handling undo/redo operations.
+   * Requirements: 5.9, 12.1, 12.2, 12.3
+   */
+  public undoManager: UndoManager;
+
   constructor(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
@@ -98,6 +105,15 @@ export class Markmap {
         this.renderData();
       }, 100),
     );
+
+    // Initialize UndoManager
+    // Requirements: 5.9, 12.1, 12.2, 12.3
+    this.undoManager = new UndoManager();
+
+    // Setup keyboard shortcuts for undo/redo
+    // Requirements: 12.2, 12.3
+    this.setupKeyboardShortcuts();
+
     this._disposeList.push(
       refreshHook.tap(() => {
         this.setData();
@@ -766,6 +782,96 @@ export class Markmap {
       .call(this.zoom.transform, newTransform)
       .end()
       .catch(noop);
+  }
+
+  /**
+   * Sets up keyboard shortcuts for undo/redo operations.
+   *
+   * Requirements:
+   * - 5.9: Support undo with Cmd+Z (Mac) or Ctrl+Z (Windows)
+   * - 12.2: Undo most recent edit with Cmd+Z / Ctrl+Z
+   * - 12.3: Redo last undone operation with Cmd+Shift+Z / Ctrl+Y
+   */
+  private setupKeyboardShortcuts(): void {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Determine if we should use Cmd (Mac) or Ctrl (Windows/Linux)
+      const ctrlKey = isMacintosh ? e.metaKey : e.ctrlKey;
+
+      // Cmd+Z / Ctrl+Z: Undo
+      // Requirement 12.2: Undo most recent edit
+      if (ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        this.handleUndo();
+        return;
+      }
+
+      // Cmd+Shift+Z / Ctrl+Y: Redo
+      // Requirement 12.3: Redo last undone operation
+      if (
+        (ctrlKey && e.key === 'z' && e.shiftKey) ||
+        (ctrlKey && e.key === 'y')
+      ) {
+        e.preventDefault();
+        this.handleRedo();
+        return;
+      }
+    };
+
+    // Add keyboard event listener
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Add cleanup to dispose list
+    this._disposeList.push(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+    });
+  }
+
+  /**
+   * Handles undo operation.
+   *
+   * Requirements:
+   * - 12.2: Undo most recent edit operation
+   * - 12.4: Update mindmap display and underlying Markdown data
+   * - 12.5: Ignore undo command when no operations to undo
+   */
+  private handleUndo(): void {
+    // Requirement 12.5: Ignore if nothing to undo
+    if (!this.undoManager.canUndo()) {
+      return;
+    }
+
+    // Perform undo
+    const entry = this.undoManager.undo();
+    if (entry) {
+      // Requirement 12.4: Update mindmap display
+      // The node state has already been updated by UndoManager.undo()
+      // We just need to re-render the mindmap
+      this.renderData();
+    }
+  }
+
+  /**
+   * Handles redo operation.
+   *
+   * Requirements:
+   * - 12.3: Redo last undone operation
+   * - 12.4: Update mindmap display and underlying Markdown data
+   * - 12.6: Ignore redo command when no operations to redo
+   */
+  private handleRedo(): void {
+    // Requirement 12.6: Ignore if nothing to redo
+    if (!this.undoManager.canRedo()) {
+      return;
+    }
+
+    // Perform redo
+    const entry = this.undoManager.redo();
+    if (entry) {
+      // Requirement 12.4: Update mindmap display
+      // The node state has already been updated by UndoManager.redo()
+      // We just need to re-render the mindmap
+      this.renderData();
+    }
   }
 
   destroy() {

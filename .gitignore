@@ -7,3 +7,7 @@ packages/*/dist
 packages/*/coverage
 packages/*/types
 *.tsbuildinfo
+
+# Ignore all markdown files except README.md
+*.md
+!README.md

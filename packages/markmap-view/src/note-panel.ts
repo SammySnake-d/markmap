@@ -20,6 +20,8 @@ export class NotePanel {
   private isEditing = false;
   private inlineNoteElement: HTMLElement | null = null;
   private detailedNoteElement: HTMLElement | null = null;
+  private autoSaveTimer: number | null = null;
+  private autoSaveDelay = 500; // 500ms delay for auto-save
 
   /**
    * Callback fired when note content is edited.
@@ -64,7 +66,7 @@ export class NotePanel {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     `;
 
-    // Header with close button
+    // Header with edit button and close button
     const header = document.createElement('div');
     header.style.cssText = `
       display: flex;
@@ -82,6 +84,41 @@ export class NotePanel {
       font-size: 14px;
       color: #333;
     `;
+
+    // Button container for edit and close buttons
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.cssText = `
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    `;
+
+    // Edit/Save button
+    const editButton = document.createElement('button');
+    editButton.className = 'markmap-note-panel-edit';
+    editButton.textContent = '✏️';
+    editButton.title = '编辑备注';
+    editButton.style.cssText = `
+      background: none;
+      border: none;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    `;
+    editButton.onmouseover = () => {
+      editButton.style.backgroundColor = '#f0f0f0';
+    };
+    editButton.onmouseout = () => {
+      editButton.style.backgroundColor = 'transparent';
+    };
 
     const closeButton = document.createElement('button');
     closeButton.className = 'markmap-note-panel-close';
@@ -107,8 +144,11 @@ export class NotePanel {
       closeButton.style.color = '#999';
     };
 
+    buttonContainer.appendChild(editButton);
+    buttonContainer.appendChild(closeButton);
+
     header.appendChild(title);
-    header.appendChild(closeButton);
+    header.appendChild(buttonContainer);
 
     // Content area
     const content = document.createElement('div');
@@ -128,6 +168,16 @@ export class NotePanel {
    * Sets up event listeners for the panel.
    */
   private setupEventListeners(): void {
+    // Edit button
+    const editButton = this.container.querySelector(
+      '.markmap-note-panel-edit',
+    ) as HTMLElement;
+    if (editButton) {
+      editButton.addEventListener('click', () => {
+        this.toggleEditMode();
+      });
+    }
+
     // Close button
     const closeButton = this.container.querySelector(
       '.markmap-note-panel-close',
@@ -163,7 +213,9 @@ export class NotePanel {
    */
   public show(node: IEnhancedNode, position: { x: number; y: number }): void {
     this.currentNode = node;
+    this.isEditing = false; // Reset edit mode when showing new node
     this.updateContent(node.inlineNote, node.detailedNote);
+    this.updateEditButton(); // Update button state
     this.positionPanel(position);
     this.container.style.display = 'block';
   }
@@ -174,6 +226,9 @@ export class NotePanel {
    * Requirement 5.6: Close panel when requested
    */
   public hide(): void {
+    // Cancel any pending auto-save before hiding
+    this.cancelAutoSave();
+
     this.container.style.display = 'none';
     this.currentNode = null;
     this.isEditing = false;
@@ -391,6 +446,40 @@ export class NotePanel {
   }
 
   /**
+   * Toggles between edit and view mode.
+   *
+   * Requirement 5.7: Allow editing of notes
+   */
+  private toggleEditMode(): void {
+    if (this.isEditing) {
+      this.disableEdit();
+    } else {
+      this.enableEdit();
+    }
+    this.updateEditButton();
+  }
+
+  /**
+   * Updates the edit button appearance based on current mode.
+   */
+  private updateEditButton(): void {
+    const editButton = this.container.querySelector(
+      '.markmap-note-panel-edit',
+    ) as HTMLElement;
+    if (!editButton) return;
+
+    if (this.isEditing) {
+      editButton.textContent = '✓';
+      editButton.title = '完成编辑';
+      editButton.style.color = '#4a90e2';
+    } else {
+      editButton.textContent = '✏️';
+      editButton.title = '编辑备注';
+      editButton.style.color = '';
+    }
+  }
+
+  /**
    * Enables edit mode for the notes.
    *
    * Requirement 5.7: Allow editing of notes
@@ -408,6 +497,8 @@ export class NotePanel {
     if (this.detailedNoteElement) {
       this.makeEditable(this.detailedNoteElement, 'detailed');
     }
+
+    this.updateEditButton();
   }
 
   /**
@@ -425,10 +516,15 @@ export class NotePanel {
     if (this.detailedNoteElement) {
       this.makeReadOnly(this.detailedNoteElement);
     }
+
+    this.updateEditButton();
   }
 
   /**
    * Makes a note element editable.
+   *
+   * Requirement 5.7: Allow editing of notes
+   * Requirement 5.8: Real-time auto-save
    */
   private makeEditable(
     element: HTMLElement,
@@ -454,8 +550,14 @@ export class NotePanel {
       box-sizing: border-box;
     `;
 
-    // Auto-save on blur
+    // Requirement 5.8: Real-time auto-save on input
+    textarea.addEventListener('input', () => {
+      this.scheduleAutoSave(type, textarea.value);
+    });
+
+    // Also save on blur (immediate save without delay)
     textarea.addEventListener('blur', () => {
+      this.cancelAutoSave();
       this.saveEdit(type, textarea.value);
     });
 
@@ -489,6 +591,35 @@ export class NotePanel {
         white-space: pre-wrap;
         word-wrap: break-word;
       `;
+    }
+  }
+
+  /**
+   * Schedules an auto-save operation with debouncing.
+   *
+   * Requirement 5.8: Real-time auto-save with debouncing to avoid excessive saves
+   *
+   * @param type - The type of note being edited
+   * @param value - The current value of the note
+   */
+  private scheduleAutoSave(type: 'inline' | 'detailed', value: string): void {
+    // Cancel any pending auto-save
+    this.cancelAutoSave();
+
+    // Schedule a new auto-save
+    this.autoSaveTimer = window.setTimeout(() => {
+      this.saveEdit(type, value);
+      this.autoSaveTimer = null;
+    }, this.autoSaveDelay);
+  }
+
+  /**
+   * Cancels any pending auto-save operation.
+   */
+  private cancelAutoSave(): void {
+    if (this.autoSaveTimer !== null) {
+      window.clearTimeout(this.autoSaveTimer);
+      this.autoSaveTimer = null;
     }
   }
 
@@ -534,6 +665,9 @@ export class NotePanel {
    * Destroys the panel and cleans up resources.
    */
   public destroy(): void {
+    // Cancel any pending auto-save
+    this.cancelAutoSave();
+
     if (this.container.parentElement) {
       this.container.parentElement.removeChild(this.container);
     }
