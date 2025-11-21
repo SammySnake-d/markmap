@@ -263,18 +263,19 @@ import fc from 'fast-check';
 describe('Property-Based Tests', () => {
   /**
    * **Feature: markmap-enhanced, Property 1: 备注解析 Round-trip**
-   * **Validates: Requirements 5.1, 5.11**
+   * **Validates: Requirements 5.1, 5.11, 6.1, 6.10**
    *
-   * Property: For any text containing separators, if we:
-   * 1. Add escape characters before separators
-   * 2. Parse the escaped text with parseInlineNote
-   * 3. Reconstruct the text by combining mainContent and inlineNote with separator
+   * Property: For any text without separators, if we:
+   * 1. Combine mainContent and noteContent with separator
+   * 2. Parse the text with parseInlineNote
+   * 3. Reconstruct by escaping separators in parsed parts (per Requirement 6.10)
    * 4. Parse again
    *
    * Then the second parse should produce the same result as the first parse.
    *
-   * This ensures that the round-trip process (escape -> parse -> export -> parse)
-   * preserves the original content structure.
+   * This ensures that the round-trip process (parse -> export with escaping -> parse)
+   * preserves the original content structure. Per Requirement 6.10, the export
+   * process must automatically add escape characters to maintain format correctness.
    */
   test('Property 1: Note parsing round-trip preserves content structure', () => {
     fc.assert(
@@ -317,12 +318,13 @@ describe('Property-Based Tests', () => {
           // Step 2: Parse the content
           const firstParse = parseInlineNote(originalContent, separator);
 
-          // Step 3: Reconstruct the content from parsed parts
-          // Note: parseInlineNote always returns inlineNote when separator is present (even if empty)
+          // Step 3: Reconstruct the content from parsed parts (simulating export)
+          // Per Requirement 6.10: Add escape characters when exporting to maintain format correctness
+          // This simulates what the exportToMarkdown function will do (task 27)
           const reconstructed =
             firstParse.inlineNote !== undefined
-              ? `${firstParse.mainContent}${separator} ${firstParse.inlineNote}`
-              : firstParse.mainContent;
+              ? `${addEscape(firstParse.mainContent, separator)}${separator} ${addEscape(firstParse.inlineNote, separator)}`
+              : addEscape(firstParse.mainContent, separator);
 
           // Step 4: Parse the reconstructed content
           const secondParse = parseInlineNote(reconstructed, separator);
