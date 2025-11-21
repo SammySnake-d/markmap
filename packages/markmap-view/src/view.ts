@@ -72,6 +72,18 @@ export class Markmap {
   private _disposeList: (() => void)[] = [];
 
   /**
+   * Flag to track if window resize handler should auto-fit
+   * Requirements: 3.2
+   */
+  private _enableWindowResize: boolean = true;
+
+  /**
+   * Flag to track if this is the first data load
+   * Requirements: 3.3
+   */
+  private _isFirstLoad: boolean = true;
+
+  /**
    * UndoManager for handling undo/redo operations.
    * Requirements: 5.9, 12.1, 12.2, 12.3
    */
@@ -129,6 +141,10 @@ export class Markmap {
     // Requirements: 12.2, 12.3
     this.setupKeyboardShortcuts();
 
+    // Setup window resize handler
+    // Requirements: 3.2
+    this.setupWindowResizeHandler();
+
     this._disposeList.push(
       refreshHook.tap(() => {
         this.setData();
@@ -172,6 +188,8 @@ export class Markmap {
 
   async toggleNode(data: INode, recursive = false) {
     const fold = data.payload?.fold ? 0 : 1;
+    const wasExpanding = fold === 0; // Track if we're expanding
+
     if (recursive) {
       // recursively
       walkTree(data, (item, next) => {
@@ -188,6 +206,11 @@ export class Markmap {
       };
     }
     await this.renderData(data);
+
+    // Requirement 3.6: Auto-adjust viewport when expanded content exceeds viewport
+    if (wasExpanding) {
+      await this.adjustViewportIfNeeded();
+    }
   }
 
   /**
@@ -195,6 +218,7 @@ export class Markmap {
    *
    * Requirements:
    * - 2.1: Expand node and all its children when user selects "Expand All"
+   * - 3.6: Auto-adjust viewport when expanded content exceeds viewport
    *
    * @param node - The node to expand. If not provided, expands from root.
    */
@@ -212,6 +236,9 @@ export class Markmap {
     });
 
     await this.renderData(targetNode);
+
+    // Requirement 3.6: Auto-adjust viewport when expanded content exceeds viewport
+    await this.adjustViewportIfNeeded();
   }
 
   /**
@@ -372,6 +399,13 @@ export class Markmap {
     if (!this.state.data) return;
     this.updateStyle();
     await this.renderData();
+
+    // Requirement 3.3: Auto-center and scale on initial load
+    // When mindmap finishes loading, automatically center and set appropriate initial scale
+    if (this._isFirstLoad) {
+      this._isFirstLoad = false;
+      await this.fit();
+    }
   }
 
   async setHighlight(node?: INode | null) {
@@ -854,6 +888,111 @@ export class Markmap {
   }
 
   /**
+   * Adjust viewport if content exceeds current viewport bounds.
+   *
+   * Requirements:
+   * - 3.6: Auto-adjust zoom or viewport position when expanded content exceeds viewport
+   */
+  async adjustViewportIfNeeded(): Promise<void> {
+    if (!this.state.data) return;
+
+    const svgNode = this.svg.node()!;
+    const { width: viewportWidth, height: viewportHeight } =
+      svgNode.getBoundingClientRect();
+    const transform = zoomTransform(svgNode);
+
+    // Get the content bounds in screen coordinates
+    const { x1, y1, x2, y2 } = this.state.rect;
+    const contentWidth = x2 - x1;
+    const contentHeight = y2 - y1;
+
+    // Transform content bounds to screen coordinates
+    const screenX1 = x1 * transform.k + transform.x;
+    const screenY1 = y1 * transform.k + transform.y;
+    const screenX2 = x2 * transform.k + transform.x;
+    const screenY2 = y2 * transform.k + transform.y;
+
+    // Check if content exceeds viewport
+    const exceedsLeft = screenX1 < 0;
+    const exceedsRight = screenX2 > viewportWidth;
+    const exceedsTop = screenY1 < 0;
+    const exceedsBottom = screenY2 > viewportHeight;
+
+    const exceedsViewport =
+      exceedsLeft || exceedsRight || exceedsTop || exceedsBottom;
+
+    if (!exceedsViewport) {
+      // Content fits within viewport, no adjustment needed
+      return;
+    }
+
+    // Calculate if we need to zoom out or just pan
+    const scaledContentWidth = contentWidth * transform.k;
+    const scaledContentHeight = contentHeight * transform.k;
+
+    const needsZoomOut =
+      scaledContentWidth > viewportWidth ||
+      scaledContentHeight > viewportHeight;
+
+    if (needsZoomOut) {
+      // Content is too large, zoom out to fit
+      const { fitRatio } = this.options;
+      const scaleX = (viewportWidth / contentWidth) * fitRatio;
+      const scaleY = (viewportHeight / contentHeight) * fitRatio;
+      const newScale = Math.min(scaleX, scaleY, this.options.maxInitialScale);
+
+      // Center the content
+      const newTransform = zoomIdentity
+        .translate(
+          (viewportWidth - contentWidth * newScale) / 2 - x1 * newScale,
+          (viewportHeight - contentHeight * newScale) / 2 - y1 * newScale,
+        )
+        .scale(newScale);
+
+      return this.transition(this.svg)
+        .call(this.zoom.transform, newTransform)
+        .end()
+        .catch(noop);
+    } else {
+      // Content fits at current scale, just pan to show the exceeding parts
+      let dx = 0;
+      let dy = 0;
+
+      // Calculate pan adjustments
+      if (exceedsLeft) {
+        dx = -screenX1; // Pan right to show left edge
+      } else if (exceedsRight) {
+        dx = viewportWidth - screenX2; // Pan left to show right edge
+      }
+
+      if (exceedsTop) {
+        dy = -screenY1; // Pan down to show top edge
+      } else if (exceedsBottom) {
+        dy = viewportHeight - screenY2; // Pan up to show bottom edge
+      }
+
+      // If content exceeds on both sides, center it
+      if (exceedsLeft && exceedsRight) {
+        dx = (viewportWidth - scaledContentWidth) / 2 - screenX1;
+      }
+      if (exceedsTop && exceedsBottom) {
+        dy = (viewportHeight - scaledContentHeight) / 2 - screenY1;
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        const newTransform = transform.translate(
+          dx / transform.k,
+          dy / transform.k,
+        );
+        return this.transition(this.svg)
+          .call(this.zoom.transform, newTransform)
+          .end()
+          .catch(noop);
+      }
+    }
+  }
+
+  /**
    * Handle context menu (right-click) on node
    *
    * Requirements:
@@ -887,6 +1026,29 @@ export class Markmap {
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
     }
+  }
+
+  /**
+   * Sets up window resize handler to auto-scale mindmap.
+   *
+   * Requirements:
+   * - 3.2: Auto-scale mindmap when browser window size changes
+   */
+  private setupWindowResizeHandler(): void {
+    const handleResize = debounce(() => {
+      if (this._enableWindowResize && this.state.data) {
+        // Auto-fit the mindmap to the new viewport size
+        this.fit();
+      }
+    }, 300);
+
+    // Add window resize event listener
+    window.addEventListener('resize', handleResize);
+
+    // Add cleanup to dispose list
+    this._disposeList.push(() => {
+      window.removeEventListener('resize', handleResize);
+    });
   }
 
   /**

@@ -460,10 +460,10 @@ describe('Layout Adjustment', () => {
       await markmap.expandAll(tree.children![0]);
 
       // All visible nodes should have valid rect
-      expect(tree.state!.rect.x1).toBeDefined();
-      expect(tree.state!.rect.y1).toBeDefined();
-      expect(tree.state!.rect.x2).toBeDefined();
-      expect(tree.state!.rect.y2).toBeDefined();
+      expect(tree.state!.rect.x).toBeDefined();
+      expect(tree.state!.rect.y).toBeDefined();
+      expect(tree.state!.rect.width).toBeDefined();
+      expect(tree.state!.rect.height).toBeDefined();
     });
 
     it('should update global rect bounds after layout adjustment', async () => {
@@ -473,7 +473,7 @@ describe('Layout Adjustment', () => {
       // Collapse all nodes
       await markmap.collapseAll(tree);
 
-      // Global rect should be updated
+      // Global rect should be updated (markmap.state.rect uses x1, y1, x2, y2)
       // (might be smaller since fewer nodes are visible)
       expect(markmap.state.rect).toBeDefined();
       expect(markmap.state.rect.x1).toBeDefined();
