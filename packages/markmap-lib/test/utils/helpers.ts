@@ -160,3 +160,74 @@ export function removeEscapeChars(
     '$1',
   );
 }
+
+/**
+ * Get the depth/level of each line in Markdown based on indentation
+ * Returns an array of depths (0 for root level, 1 for first indent, etc.)
+ */
+export function getMarkdownLineLevels(markdown: string): number[] {
+  const lines = markdown.split('\n').filter((line) => line.trim());
+  return lines.map((line) => {
+    // Count leading spaces and divide by 2 (each level is 2 spaces)
+    const leadingSpaces = line.match(/^ */)?.[0].length || 0;
+    return Math.floor(leadingSpaces / 2);
+  });
+}
+
+/**
+ * Get the depth of each node in a tree (breadth-first traversal)
+ */
+export function getNodeDepths(node: any, currentDepth: number = 0): number[] {
+  const depths = [currentDepth];
+
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      depths.push(...getNodeDepths(child, currentDepth + 1));
+    }
+  }
+
+  return depths;
+}
+
+/**
+ * Count the number of nodes at each depth level
+ */
+export function countNodesAtDepth(node: any): Map<number, number> {
+  const counts = new Map<number, number>();
+
+  function traverse(n: any, depth: number) {
+    counts.set(depth, (counts.get(depth) || 0) + 1);
+    if (n.children) {
+      for (const child of n.children) {
+        traverse(child, depth + 1);
+      }
+    }
+  }
+
+  traverse(node, 0);
+  return counts;
+}
+
+/**
+ * Verify that parent-child relationships are preserved in depth sequence
+ * A valid hierarchy means each child's depth is exactly parent's depth + 1
+ */
+export function isValidHierarchy(depths: number[]): boolean {
+  if (depths.length === 0) return true;
+
+  for (let i = 1; i < depths.length; i++) {
+    const prevDepth = depths[i - 1];
+    const currDepth = depths[i];
+
+    // Current depth can be:
+    // 1. Same as previous (sibling)
+    // 2. One more than previous (child)
+    // 3. Less than previous (going back up the tree)
+    // But it cannot be more than previous + 1
+    if (currDepth > prevDepth + 1) {
+      return false;
+    }
+  }
+
+  return true;
+}

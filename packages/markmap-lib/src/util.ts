@@ -326,3 +326,127 @@ export function parseMixedNotes(
     children: detailedResult.children,
   };
 }
+
+/**
+ * Exports a node tree to Markdown format.
+ *
+ * This function converts a node tree back to Markdown, preserving:
+ * - Hierarchical structure with proper indentation
+ * - Inline notes (using colon separator)
+ * - Detailed notes (using blockquote format)
+ * - Escape characters for special characters
+ *
+ * Requirements: 4.2, 4.3, 4.4, 5.11, 6.10
+ *
+ * @param node - The root node to export (or any subtree)
+ * @param options - Export options
+ * @returns Markdown string representation of the node tree
+ */
+export function exportToMarkdown(
+  node: any,
+  options?: {
+    /**
+     * The separator between main content and inline note.
+     * Default: ':'
+     */
+    noteSeparator?: string;
+    /**
+     * The marker for blockquote (detailed note).
+     * Default: '>'
+     */
+    noteBlockMarker?: string;
+    /**
+     * The escape character for special characters.
+     * Default: '\'
+     */
+    escapeChar?: string;
+    /**
+     * The list marker for nodes.
+     * Default: '-'
+     */
+    nodeMarker?: string;
+    /**
+     * Current indentation level (used internally for recursion).
+     * Default: 0
+     */
+    level?: number;
+  },
+): string {
+  const {
+    noteSeparator = DEFAULT_SEPARATORS.note,
+    noteBlockMarker = DEFAULT_SEPARATORS.noteBlock,
+    escapeChar = DEFAULT_SEPARATORS.escape,
+    nodeMarker = DEFAULT_SEPARATORS.node,
+    level = 0,
+  } = options || {};
+
+  const lines: string[] = [];
+  const indent = '  '.repeat(level); // 2 spaces per level
+
+  // Skip the root node if it has no content (common in markmap)
+  if (level === 0 && !node.content?.trim()) {
+    // Export children directly without the root
+    if (node.children && node.children.length > 0) {
+      return node.children
+        .map((child: any) =>
+          exportToMarkdown(child, {
+            noteSeparator,
+            noteBlockMarker,
+            escapeChar,
+            nodeMarker,
+            level: 0,
+          }),
+        )
+        .join('\n');
+    }
+    return '';
+  }
+
+  // Build the main line with content and optional inline note
+  let mainLine = `${indent}${nodeMarker} `;
+
+  // Add escaped main content
+  if (node.content) {
+    const escapedContent = addEscape(node.content, noteSeparator, escapeChar);
+    mainLine += escapedContent;
+  }
+
+  // Add inline note if present (only if it's not empty or undefined)
+  if (node.inlineNote !== undefined && node.inlineNote !== '') {
+    const escapedNote = addEscape(node.inlineNote, noteSeparator, escapeChar);
+    mainLine += `${noteSeparator} ${escapedNote}`;
+  }
+
+  lines.push(mainLine);
+
+  // Add detailed note as blockquote if present
+  if (node.detailedNote) {
+    const noteLines = node.detailedNote.split('\n');
+    for (const noteLine of noteLines) {
+      if (noteLine.trim()) {
+        lines.push(`${indent}  ${noteBlockMarker} ${noteLine.trim()}`);
+      } else {
+        // Preserve empty lines in detailed notes
+        lines.push(`${indent}  ${noteBlockMarker}`);
+      }
+    }
+  }
+
+  // Recursively export children
+  if (node.children && node.children.length > 0) {
+    for (const child of node.children) {
+      const childMarkdown = exportToMarkdown(child, {
+        noteSeparator,
+        noteBlockMarker,
+        escapeChar,
+        nodeMarker,
+        level: level + 1,
+      });
+      if (childMarkdown) {
+        lines.push(childMarkdown);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}

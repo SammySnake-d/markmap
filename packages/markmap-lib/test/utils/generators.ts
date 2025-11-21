@@ -143,3 +143,64 @@ export const arbMarkdownDocument = (): fc.Arbitrary<string> => {
     .tuple(fc.option(arbFrontmatter(), { nil: '' }), arbNestedMarkdownList())
     .map(([frontmatter, content]) => `${frontmatter}${content}`);
 };
+
+/**
+ * Generate a random node tree structure for testing
+ * This creates nodes with content, optional notes, and children
+ */
+export const arbNodeTree = (maxDepth: number = 3): fc.Arbitrary<any> => {
+  const arbNode = (depth: number): fc.Arbitrary<any> => {
+    if (depth >= maxDepth) {
+      // Leaf node - no children
+      return fc.record({
+        content: arbMarkdownText(),
+        inlineNote: fc.option(arbMarkdownText(), { nil: undefined }),
+        detailedNote: fc.option(
+          fc
+            .array(arbMarkdownText(), { minLength: 1, maxLength: 3 })
+            .map((lines) => lines.join('\n')),
+          { nil: undefined },
+        ),
+        children: fc.constant([]),
+      });
+    }
+
+    // Non-leaf node - can have children
+    return fc.record({
+      content: arbMarkdownText(),
+      inlineNote: fc.option(arbMarkdownText(), { nil: undefined }),
+      detailedNote: fc.option(
+        fc
+          .array(arbMarkdownText(), { minLength: 1, maxLength: 3 })
+          .map((lines) => lines.join('\n')),
+        { nil: undefined },
+      ),
+      children: fc.array(arbNode(depth + 1), { maxLength: 3 }),
+    });
+  };
+
+  return arbNode(0);
+};
+
+/**
+ * Generate a simple node tree (no notes, just hierarchy)
+ */
+export const arbSimpleNodeTree = (maxDepth: number = 3): fc.Arbitrary<any> => {
+  const arbNode = (depth: number): fc.Arbitrary<any> => {
+    if (depth >= maxDepth) {
+      // Leaf node - no children
+      return fc.record({
+        content: arbMarkdownText(),
+        children: fc.constant([]),
+      });
+    }
+
+    // Non-leaf node - can have children
+    return fc.record({
+      content: arbMarkdownText(),
+      children: fc.array(arbNode(depth + 1), { maxLength: 3 }),
+    });
+  };
+
+  return arbNode(0);
+};
