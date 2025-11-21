@@ -29,7 +29,8 @@ import {
   IPadding,
 } from './types';
 import { UndoManager } from './undo-manager';
-import { childSelector, simpleHash } from './util';
+import { ContextMenu } from './context-menu';
+import { childSelector, simpleHash, exportNodeAsMarkdown } from './util';
 
 export const globalCSS = css;
 
@@ -76,6 +77,12 @@ export class Markmap {
    */
   public undoManager: UndoManager;
 
+  /**
+   * ContextMenu for node right-click interactions.
+   * Requirements: 8.4
+   */
+  private contextMenu: ContextMenu;
+
   constructor(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
@@ -109,6 +116,14 @@ export class Markmap {
     // Initialize UndoManager
     // Requirements: 5.9, 12.1, 12.2, 12.3
     this.undoManager = new UndoManager();
+
+    // Initialize ContextMenu
+    // Requirements: 8.4
+    this.contextMenu = new ContextMenu({
+      onCopyAsMarkdown: (node) => this.handleCopyAsMarkdown(node),
+      onExpandAll: (node) => this.expandAll(node),
+      onCollapseAll: (node) => this.collapseAll(node),
+    });
 
     // Setup keyboard shortcuts for undo/redo
     // Requirements: 12.2, 12.3
@@ -173,6 +188,54 @@ export class Markmap {
       };
     }
     await this.renderData(data);
+  }
+
+  /**
+   * Expand a node and all its descendants.
+   *
+   * Requirements:
+   * - 2.1: Expand node and all its children when user selects "Expand All"
+   *
+   * @param node - The node to expand. If not provided, expands from root.
+   */
+  async expandAll(node?: INode): Promise<void> {
+    const targetNode = node || this.state.data;
+    if (!targetNode) return;
+
+    // Walk through the tree and set fold to 0 (expanded) for all nodes
+    walkTree(targetNode, (item, next) => {
+      item.payload = {
+        ...item.payload,
+        fold: 0,
+      };
+      next();
+    });
+
+    await this.renderData(targetNode);
+  }
+
+  /**
+   * Collapse a node and all its descendants.
+   *
+   * Requirements:
+   * - 2.2: Collapse all children under a node when user selects "Collapse All"
+   *
+   * @param node - The node to collapse. If not provided, collapses from root.
+   */
+  async collapseAll(node?: INode): Promise<void> {
+    const targetNode = node || this.state.data;
+    if (!targetNode) return;
+
+    // Walk through the tree and set fold to 1 (collapsed) for all nodes
+    walkTree(targetNode, (item, next) => {
+      item.payload = {
+        ...item.payload,
+        fold: 1,
+      };
+      next();
+    });
+
+    await this.renderData(targetNode);
   }
 
   handleClick = (e: MouseEvent, d: INode) => {
@@ -440,7 +503,8 @@ export class Markmap {
       .attr('stroke-width', 0)
       .attr('r', 0)
       .on('click', (e, d) => this.handleClick(e, d))
-      .on('mousedown', stopPropagation);
+      .on('mousedown', stopPropagation)
+      .on('contextmenu', (e, d) => this.handleContextMenu(e, d));
     const mmCircleMerge = mmCircleEnter
       .merge(mmCircle)
       .attr('stroke', (d) => color(d))
@@ -468,7 +532,8 @@ export class Markmap {
       .attr('y', 0)
       .style('opacity', 0)
       .on('mousedown', stopPropagation)
-      .on('dblclick', stopPropagation);
+      .on('dblclick', stopPropagation)
+      .on('contextmenu', (e, d) => this.handleContextMenu(e, d));
     mmFoEnter
       // The outer `<div>` with a width of `maxWidth`
       .append<HTMLDivElement>('xhtml:div')
@@ -789,6 +854,42 @@ export class Markmap {
   }
 
   /**
+   * Handle context menu (right-click) on node
+   *
+   * Requirements:
+   * - 8.4: Display context menu on node right-click with options
+   */
+  private handleContextMenu = (e: MouseEvent, d: INode) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.contextMenu.show(d, e.clientX, e.clientY);
+  };
+
+  /**
+   * Handle "Copy as Markdown" action from context menu
+   *
+   * Requirements:
+   * - 8.4: Provide "Copy as Markdown" option in context menu
+   * - 4.1: Copy node subtree as Markdown to clipboard
+   * - 4.2: Preserve hierarchical structure in export
+   */
+  private async handleCopyAsMarkdown(node: INode): Promise<void> {
+    try {
+      // Export the node and its subtree to Markdown
+      const markdown = exportNodeAsMarkdown(node);
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(markdown);
+
+      // Optional: Show a brief success notification
+      // This could be enhanced with a toast notification in the future
+      console.log('Copied to clipboard:', markdown);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  }
+
+  /**
    * Sets up keyboard shortcuts for undo/redo operations.
    *
    * Requirements:
@@ -881,6 +982,7 @@ export class Markmap {
   destroy() {
     this.svg.on('.zoom', null);
     this.svg.html(null);
+    this.contextMenu.destroy();
     this._disposeList.forEach((fn) => {
       fn();
     });

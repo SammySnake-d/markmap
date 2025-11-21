@@ -56,6 +56,8 @@ export class Toolbar {
     'zoomIn',
     'zoomOut',
     'fit',
+    'expandAll',
+    'collapseAll',
     'recurse',
     'dark',
   ];
@@ -104,6 +106,18 @@ export class Toolbar {
         'M4 7h2v-2h2v4h-4zM4 13h2v2h2v-4h-4zM16 7h-2v-2h-2v4h4zM16 13h-2v2h-2v-4h4z',
       ),
       onClick: this.getHandler((mm) => mm.fit()),
+    });
+    this.register({
+      id: 'expandAll',
+      title: 'Expand all nodes',
+      content: Toolbar.icon('M10 2v6h-6v2h6v6h2v-6h6v-2h-6v-6z'),
+      onClick: this.getHandler((mm) => mm.expandAll()),
+    });
+    this.register({
+      id: 'collapseAll',
+      title: 'Collapse all nodes',
+      content: Toolbar.icon('M4 9h12v2h-12z'),
+      onClick: this.getHandler((mm) => mm.collapseAll()),
     });
     this.register({
       id: 'recurse',
