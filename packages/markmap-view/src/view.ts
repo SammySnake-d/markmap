@@ -30,6 +30,7 @@ import {
 } from './types';
 import { UndoManager } from './undo-manager';
 import { ContextMenu } from './context-menu';
+import { TouchManager } from './touch-manager';
 import { childSelector, simpleHash, exportNodeAsMarkdown } from './util';
 
 export const globalCSS = css;
@@ -95,6 +96,12 @@ export class Markmap {
    */
   private contextMenu: ContextMenu;
 
+  /**
+   * TouchManager for handling touch gestures on mobile devices.
+   * Requirements: 11.2, 11.3
+   */
+  private touchManager: TouchManager;
+
   constructor(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
@@ -112,18 +119,6 @@ export class Markmap {
         return (!event.ctrlKey || event.type === 'wheel') && !event.button;
       })
       .on('zoom', this.handleZoom);
-    this.setOptions(opts);
-    this.state = {
-      id: this.options.id || this.svg.attr('id') || getId(),
-      rect: { x1: 0, y1: 0, x2: 0, y2: 0 },
-    };
-    this.g = this.svg.append('g');
-    this.g.append('g').attr('class', 'markmap-highlight');
-    this._observer = new ResizeObserver(
-      debounce(() => {
-        this.renderData();
-      }, 100),
-    );
 
     // Initialize UndoManager
     // Requirements: 5.9, 12.1, 12.2, 12.3
@@ -136,6 +131,34 @@ export class Markmap {
       onExpandAll: (node) => this.expandAll(node),
       onCollapseAll: (node) => this.collapseAll(node),
     });
+
+    // Initialize TouchManager
+    // Requirements: 11.2, 11.3, 11.4, 11.5
+    this.touchManager = new TouchManager(
+      // Pan callback - translate the view
+      (dx: number, dy: number) => this.handleTouchPan(dx, dy),
+      // Zoom callback - scale the view
+      (scale: number, centerX: number, centerY: number) =>
+        this.handleTouchZoom(scale, centerX, centerY),
+      // Node tap callback - toggle expand/collapse
+      (element: Element) => this.handleNodeTap(element),
+      // Node long press callback - show context menu
+      (element: Element, x: number, y: number) =>
+        this.handleNodeLongPress(element, x, y),
+    );
+
+    this.setOptions(opts);
+    this.state = {
+      id: this.options.id || this.svg.attr('id') || getId(),
+      rect: { x1: 0, y1: 0, x2: 0, y2: 0 },
+    };
+    this.g = this.svg.append('g');
+    this.g.append('g').attr('class', 'markmap-highlight');
+    this._observer = new ResizeObserver(
+      debounce(() => {
+        this.renderData();
+      }, 100),
+    );
 
     // Setup keyboard shortcuts for undo/redo
     // Requirements: 12.2, 12.3
@@ -184,6 +207,121 @@ export class Markmap {
       -e.deltaY / transform.k,
     );
     this.svg.call(this.zoom.transform, newTransform);
+  };
+
+  /**
+   * Handle touch pan gesture.
+   *
+   * This method is called by TouchManager when a single-finger drag is detected.
+   * It translates the view by the given delta values.
+   *
+   * Requirements:
+   * - 11.2: Support single-finger drag to pan canvas
+   *
+   * @param dx - Horizontal movement delta in pixels
+   * @param dy - Vertical movement delta in pixels
+   */
+  private handleTouchPan = (dx: number, dy: number): void => {
+    const svgNode = this.svg.node();
+    if (!svgNode) return;
+
+    const transform = zoomTransform(svgNode);
+    // Translate by the delta, accounting for current scale
+    const newTransform = transform.translate(
+      dx / transform.k,
+      dy / transform.k,
+    );
+    this.svg.call(this.zoom.transform, newTransform);
+  };
+
+  /**
+   * Handle touch zoom gesture.
+   *
+   * This method is called by TouchManager when a two-finger pinch is detected.
+   * It scales the view around the center point of the pinch gesture.
+   *
+   * Requirements:
+   * - 11.3: Support two-finger pinch to zoom canvas
+   *
+   * @param scale - Scale factor (relative to previous scale)
+   * @param centerX - X coordinate of pinch center in screen space
+   * @param centerY - Y coordinate of pinch center in screen space
+   */
+  private handleTouchZoom = (
+    scale: number,
+    centerX: number,
+    centerY: number,
+  ): void => {
+    const svgNode = this.svg.node();
+    if (!svgNode) return;
+
+    const transform = zoomTransform(svgNode);
+    const rect = svgNode.getBoundingClientRect();
+
+    // Convert screen coordinates to SVG coordinates
+    const x = centerX - rect.left;
+    const y = centerY - rect.top;
+
+    // Calculate the point in the SVG coordinate system
+    const svgX = (x - transform.x) / transform.k;
+    const svgY = (y - transform.y) / transform.k;
+
+    // Apply zoom around the pinch center point
+    const newTransform = transform
+      .translate(svgX, svgY)
+      .scale(scale)
+      .translate(-svgX, -svgY);
+
+    this.svg.call(this.zoom.transform, newTransform);
+  };
+
+  /**
+   * Handle node tap gesture.
+   *
+   * This method is called by TouchManager when a single tap on a node is detected.
+   * It toggles the expand/collapse state of the node.
+   *
+   * Requirements:
+   * - 11.4: Single tap on node toggles expand/collapse state
+   *
+   * @param element - The node element that was tapped
+   */
+  private handleNodeTap = (element: Element): void => {
+    // Find the node data associated with this element
+    const nodeData = select(element).datum() as INode | undefined;
+
+    if (nodeData) {
+      // Toggle the node (same behavior as click)
+      // Use the same logic as handleClick but without the recursive modifier
+      this.toggleNode(nodeData, false);
+    }
+  };
+
+  /**
+   * Handle node long press gesture.
+   *
+   * This method is called by TouchManager when a long press on a node is detected.
+   * It shows the context menu for the node.
+   *
+   * Requirements:
+   * - 11.5: Long press on node shows context menu
+   *
+   * @param element - The node element that was long-pressed
+   * @param x - X coordinate of the long press in screen space
+   * @param y - Y coordinate of the long press in screen space
+   */
+  private handleNodeLongPress = (
+    element: Element,
+    x: number,
+    y: number,
+  ): void => {
+    // Find the node data associated with this element
+    const nodeData = select(element).datum() as INode | undefined;
+
+    if (nodeData) {
+      // Show context menu at the touch position
+      this.contextMenu.show(nodeData, x, y);
+    }
   };
 
   async toggleNode(data: INode, recursive = false) {
@@ -390,6 +528,17 @@ export class Markmap {
       this.svg.on('wheel', this.handlePan);
     } else {
       this.svg.on('wheel', null);
+    }
+    // Enable or disable touch support based on options
+    // Requirements: 11.2, 11.3
+    const svgNode = this.svg.node();
+    if (svgNode) {
+      if (this.options.enableTouch !== false) {
+        // Touch is enabled by default (unless explicitly disabled)
+        this.touchManager.enableTouch(svgNode);
+      } else {
+        this.touchManager.disableTouch();
+      }
     }
   }
 
@@ -1420,10 +1569,55 @@ export class Markmap {
     this._triggerDownload(blob, filename);
   }
 
+  /**
+   * Apply color scheme with smooth transition animation.
+   *
+   * This method updates the colors of all nodes and links with a smooth
+   * transition animation, providing a better visual experience when
+   * switching color schemes.
+   *
+   * Requirements:
+   * - 10.6: Use smooth transition animation when switching colors
+   *
+   * @param colorFn - Function that returns color for a node
+   */
+  applyColorSchemeWithAnimation(colorFn: (node: INode) => string): void {
+    const { duration } = this.options;
+
+    // Animate node lines (the horizontal lines)
+    this.g
+      .selectAll<SVGLineElement, INode>(SELECTOR_NODE)
+      .select<SVGLineElement>('line')
+      .transition()
+      .duration(duration)
+      .attr('stroke', (d) => colorFn(d));
+
+    // Animate node circles (the fold/unfold indicators)
+    this.g
+      .selectAll<SVGCircleElement, INode>(SELECTOR_NODE)
+      .select<SVGCircleElement>('circle')
+      .transition()
+      .duration(duration)
+      .attr('stroke', (d) => colorFn(d))
+      .attr('fill', (d) =>
+        d.payload?.fold && d.children
+          ? colorFn(d)
+          : 'var(--markmap-circle-open-bg)',
+      );
+
+    // Animate links (the connections between nodes)
+    this.g
+      .selectAll<SVGPathElement, d3.HierarchyPointLink<INode>>(SELECTOR_LINK)
+      .transition()
+      .duration(duration)
+      .attr('stroke', (d) => colorFn(d.target.data));
+  }
+
   destroy() {
     this.svg.on('.zoom', null);
     this.svg.html(null);
     this.contextMenu.destroy();
+    this.touchManager.disableTouch();
     this._disposeList.forEach((fn) => {
       fn();
     });

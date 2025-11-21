@@ -23,6 +23,7 @@ export const defaultOptions: IMarkmapOptions = {
   zoom: true,
   pan: true,
   toggleRecursively: false,
+  enableTouch: true, // Enable touch gestures by default (Requirements: 11.2, 11.3)
 
   color: (node: INode): string => defaultColorFn(`${node.state?.path || ''}`),
   lineWidth: lineWidthFactory(),

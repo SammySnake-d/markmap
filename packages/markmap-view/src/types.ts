@@ -48,6 +48,10 @@ export interface IMarkmapOptions {
   toggleRecursively: boolean;
   zoom: boolean;
 
+  // Mobile support options
+  // Requirements: 11.2, 11.3
+  enableTouch?: boolean; // Enable touch gestures (default: true)
+
   // Theme options
   color: (node: INode) => string;
   lineWidth: (node: INode) => number;
