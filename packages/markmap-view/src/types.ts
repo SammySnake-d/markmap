@@ -65,6 +65,12 @@ export interface IMarkmapOptions {
   paddingX: number;
   spacingHorizontal: number;
   spacingVertical: number;
+
+  // Callback functions
+  // Requirements: 13.7
+  onMarkdownChange?: (markdown: string) => void; // Called when markdown content changes
+  onNodeClick?: (node: INode) => void; // Called when a node is clicked
+  onNoteEdit?: (node: INode, note: string) => void; // Called when a note is edited
 }
 
 export interface IPadding {

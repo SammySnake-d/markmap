@@ -467,6 +467,11 @@ export class Markmap {
     let recursive = this.options.toggleRecursively;
     if (isMacintosh ? e.metaKey : e.ctrlKey) recursive = !recursive;
     this.toggleNode(d, recursive);
+
+    // Requirement 13.7: Notify external application when node is clicked
+    if (this.options.onNodeClick) {
+      this.options.onNodeClick(d);
+    }
   };
 
   private _initializeData(node: IPureNode | INode) {
@@ -1970,6 +1975,7 @@ export class Markmap {
    *
    * Requirements:
    * - 16.1: Auto-save Markdown content when modified
+   * - 13.7: Notify external application when content changes
    *
    * @param markdown - The markdown content to set
    */
@@ -1979,6 +1985,11 @@ export class Markmap {
     // Auto-save if enabled
     if (this.options.enableAutoSave && this.storageManager) {
       this.saveToStorage();
+    }
+
+    // Requirement 13.7: Notify external application when markdown changes
+    if (this.options.onMarkdownChange) {
+      this.options.onMarkdownChange(markdown);
     }
   }
 
