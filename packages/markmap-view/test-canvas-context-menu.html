@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Context Menu Test - 画布右键菜单测试</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+          sans-serif;
+      }
+      #mindmap {
+        width: 100%;
+        height: 600px;
+        border: 1px solid #ccc;
+        background: #fafafa;
+      }
+      .instructions {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #e3f2fd;
+        border-radius: 4px;
+      }
+      .instructions h2 {
+        margin-top: 0;
+      }
+      .instructions ul {
+        margin: 10px 0;
+      }
+      .instructions li {
+        margin: 5px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="instructions">
+      <h2>画布右键菜单测试说明</h2>
+      <p>本页面用于测试画布右键菜单功能（需求 8.5）</p>
+      <ul>
+        <li><strong>在节点上右键点击</strong>：显示节点菜单（复制为 Markdown、展开全部、折叠全部）</li>
+        <li><strong>在空白画布区域右键点击</strong>：显示画布菜单（导出为 PNG、JPG、SVG、Markdown）</li>
+        <li>点击导出选项后，应该触发相应的导出功能</li>
+        <li>按 ESC 键或点击菜单外部可以关闭菜单</li>
+      </ul>
+    </div>
+
+    <svg id="mindmap"></svg>
+
+    <script type="module">
+      import { Transformer } from '../../markmap-lib/dist/index.js';
+      import { Markmap } from '../dist/index.js';
+
+      const markdown = `# 测试思维导图
+
+## 功能测试
+- 节点右键菜单
+  - 复制为 Markdown
+  - 展开全部
+  - 折叠全部
+- 画布右键菜单
+  - 导出为 PNG
+  - 导出为 JPG
+  - 导出为 SVG
+  - 导出为 Markdown
+
+## 交互说明
+- 在节点上右键：显示节点菜单
+- 在空白区域右键：显示画布菜单
+- 点击菜单项：执行相应操作
+- ESC 或点击外部：关闭菜单
+
+## 验证要点
+- 菜单位置正确
+- 菜单项显示正确
+- 点击后功能正常
+- 菜单正确关闭
+`;
+
+      const transformer = new Transformer();
+      const { root } = transformer.transform(markdown);
+
+      const svg = document.getElementById('mindmap');
+      const mm = Markmap.create(svg, {
+        duration: 300,
+        maxWidth: 300,
+      });
+
+      mm.setData(root);
+      mm.fit();
+
+      // Add console logging for export actions
+      console.log('Canvas context menu test initialized');
+      console.log('Right-click on nodes to see node menu');
+      console.log('Right-click on empty canvas to see canvas menu');
+    </script>
+  </body>
+</html>

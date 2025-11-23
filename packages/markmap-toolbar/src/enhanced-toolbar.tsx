@@ -2,7 +2,9 @@ import type { Markmap } from 'markmap-view';
 import { Toolbar, IToolbarItem } from './toolbar';
 import { ExportMenu, ExportFormat } from './export-menu';
 import { ColorPicker } from './color-picker';
+import { SearchBox } from './search-box';
 import './enhanced-style.css';
+import './search-box.css';
 
 export interface EnhancedToolbarOptions {
   position?: 'top' | 'bottom';
@@ -37,6 +39,7 @@ export class EnhancedToolbar extends Toolbar {
   private options: EnhancedToolbarOptions;
   private callbacks: EnhancedToolbarCallbacks;
   private container: HTMLElement | null = null;
+  private searchBox: SearchBox | null = null;
   private exportMenu: ExportMenu | null = null;
   private colorPicker: ColorPicker | null = null;
   private brandElement: HTMLElement | null = null;
@@ -286,11 +289,14 @@ export class EnhancedToolbar extends Toolbar {
   }
 
   /**
-   * 渲染子组件（导出菜单、颜色选择器、品牌标识和设置按钮）
+   * 渲染子组件（搜索框、导出菜单、颜色选择器、品牌标识和设置按钮）
    * 这个方法应该在 render() 之后调用
    */
   private renderSubComponents(): void {
     if (!this.el) return;
+
+    // 渲染搜索框
+    this.renderSearchBox();
 
     // 渲染导出菜单
     this.renderExportMenu();
@@ -301,6 +307,60 @@ export class EnhancedToolbar extends Toolbar {
     // 渲染品牌标识和设置按钮（固定在右上角）
     this.renderBrand();
     this.renderSettings();
+  }
+
+  /**
+   * 创建搜索框
+   * Requirements: 9.3, 9.6
+   */
+  private createSearchBox(): SearchBox {
+    const searchBox = new SearchBox({
+      placeholder: '搜索...',
+      debounceMs: 300,
+      showClearButton: true,
+    });
+
+    // 设置搜索回调
+    // Requirements: 9.6 - 用户在搜索框中输入内容时实时更新搜索结果
+    searchBox.onSearch = (keyword: string) => {
+      if (this.callbacks.onSearch) {
+        this.callbacks.onSearch(keyword);
+      }
+    };
+
+    // 设置清除回调
+    searchBox.onClear = () => {
+      if (this.callbacks.onSearch) {
+        this.callbacks.onSearch('');
+      }
+    };
+
+    return searchBox;
+  }
+
+  /**
+   * 渲染并附加搜索框
+   * Requirements: 9.3 - 在工具栏左侧或作为浮动元素显示搜索框
+   */
+  private renderSearchBox(): void {
+    if (!this.options.showSearch || !this.el) return;
+
+    // 销毁旧的搜索框（如果存在）
+    if (this.searchBox) {
+      this.searchBox.destroy();
+    }
+
+    // 创建新的搜索框
+    this.searchBox = this.createSearchBox();
+    const searchBoxEl = this.searchBox.render();
+
+    // 将搜索框插入到工具栏的开头（左侧）
+    // Requirements: 9.3 - 在工具栏左侧显示搜索框
+    if (this.el.firstChild) {
+      this.el.insertBefore(searchBoxEl, this.el.firstChild);
+    } else {
+      this.el.appendChild(searchBoxEl);
+    }
   }
 
   /**
@@ -478,6 +538,12 @@ export class EnhancedToolbar extends Toolbar {
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
       this.resizeObserver = null;
+    }
+
+    // 销毁搜索框
+    if (this.searchBox) {
+      this.searchBox.destroy();
+      this.searchBox = null;
     }
 
     // 销毁导出菜单

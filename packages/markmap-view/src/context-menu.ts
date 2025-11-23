@@ -11,6 +11,10 @@ export interface ContextMenuOptions {
   onCopyAsMarkdown?: (node: INode) => void;
   onExpandAll?: (node: INode) => void;
   onCollapseAll?: (node: INode) => void;
+  onExportPNG?: () => void;
+  onExportJPG?: () => void;
+  onExportSVG?: () => void;
+  onExportMarkdown?: () => void;
 }
 
 export class ContextMenu {
@@ -87,6 +91,58 @@ export class ContextMenu {
       },
     ];
 
+    this.renderMenuItems(items, x, y);
+  }
+
+  /**
+   * Show canvas context menu at specified position
+   *
+   * Requirements:
+   * - 8.5: Display canvas-level context menu on canvas right-click with export options
+   */
+  showCanvasMenu(x: number, y: number): void {
+    this.currentNode = null;
+    this.container.innerHTML = '';
+
+    // Create canvas menu items with export options
+    const items = [
+      {
+        label: '导出为 PNG',
+        icon: '🖼️',
+        action: () => this.handleExportPNG(),
+      },
+      {
+        label: '导出为 JPG',
+        icon: '🖼️',
+        action: () => this.handleExportJPG(),
+      },
+      {
+        label: '导出为 SVG',
+        icon: '🎨',
+        action: () => this.handleExportSVG(),
+      },
+      {
+        label: '导出为 Markdown',
+        icon: '📝',
+        action: () => this.handleExportMarkdown(),
+      },
+    ];
+
+    this.renderMenuItems(items, x, y);
+  }
+
+  /**
+   * Render menu items at specified position
+   *
+   * @param items - Array of menu items to render
+   * @param x - X coordinate for menu position
+   * @param y - Y coordinate for menu position
+   */
+  private renderMenuItems(
+    items: Array<{ label: string; icon: string; action: () => void }>,
+    x: number,
+    y: number,
+  ): void {
     items.forEach((item) => {
       const menuItem = document.createElement('div');
       menuItem.className = 'markmap-context-menu-item';
@@ -178,6 +234,54 @@ export class ContextMenu {
   private handleCollapseAll(): void {
     if (this.currentNode && this.options.onCollapseAll) {
       this.options.onCollapseAll(this.currentNode);
+    }
+  }
+
+  /**
+   * Handle "Export as PNG" action
+   *
+   * Requirements:
+   * - 8.5: Provide export options in canvas context menu
+   */
+  private handleExportPNG(): void {
+    if (this.options.onExportPNG) {
+      this.options.onExportPNG();
+    }
+  }
+
+  /**
+   * Handle "Export as JPG" action
+   *
+   * Requirements:
+   * - 8.5: Provide export options in canvas context menu
+   */
+  private handleExportJPG(): void {
+    if (this.options.onExportJPG) {
+      this.options.onExportJPG();
+    }
+  }
+
+  /**
+   * Handle "Export as SVG" action
+   *
+   * Requirements:
+   * - 8.5: Provide export options in canvas context menu
+   */
+  private handleExportSVG(): void {
+    if (this.options.onExportSVG) {
+      this.options.onExportSVG();
+    }
+  }
+
+  /**
+   * Handle "Export as Markdown" action
+   *
+   * Requirements:
+   * - 8.5: Provide export options in canvas context menu
+   */
+  private handleExportMarkdown(): void {
+    if (this.options.onExportMarkdown) {
+      this.options.onExportMarkdown();
     }
   }
 

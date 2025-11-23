@@ -85,6 +85,15 @@ export class Markmap {
   private _isFirstLoad: boolean = true;
 
   /**
+   * Space key drag state
+   * Requirements: 8.2
+   */
+  private _spaceKeyPressed: boolean = false;
+  private _isDragging: boolean = false;
+  private _dragStartX: number = 0;
+  private _dragStartY: number = 0;
+
+  /**
    * UndoManager for handling undo/redo operations.
    * Requirements: 5.9, 12.1, 12.2, 12.3
    */
@@ -125,11 +134,15 @@ export class Markmap {
     this.undoManager = new UndoManager();
 
     // Initialize ContextMenu
-    // Requirements: 8.4
+    // Requirements: 8.4, 8.5
     this.contextMenu = new ContextMenu({
       onCopyAsMarkdown: (node) => this.handleCopyAsMarkdown(node),
       onExpandAll: (node) => this.expandAll(node),
       onCollapseAll: (node) => this.collapseAll(node),
+      onExportPNG: () => this.downloadAsPNG(),
+      onExportJPG: () => this.downloadAsJPG(),
+      onExportSVG: () => this.downloadAsSVG(),
+      onExportMarkdown: () => this.handleExportMarkdownFromCanvas(),
     });
 
     // Initialize TouchManager
@@ -167,6 +180,14 @@ export class Markmap {
     // Setup window resize handler
     // Requirements: 3.2
     this.setupWindowResizeHandler();
+
+    // Setup Space key drag functionality
+    // Requirements: 8.2
+    this.setupSpaceKeyDrag();
+
+    // Setup canvas right-click menu
+    // Requirements: 8.5
+    this.setupCanvasContextMenu();
 
     this._disposeList.push(
       refreshHook.tap(() => {
@@ -1154,6 +1175,18 @@ export class Markmap {
   };
 
   /**
+   * Handle context menu (right-click) on canvas
+   *
+   * Requirements:
+   * - 8.5: Display canvas-level context menu on canvas right-click with export options
+   */
+  private handleCanvasContextMenu = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    this.contextMenu.showCanvasMenu(e.clientX, e.clientY);
+  };
+
+  /**
    * Handle "Copy as Markdown" action from context menu
    *
    * Requirements:
@@ -1174,6 +1207,27 @@ export class Markmap {
       console.log('Copied to clipboard:', markdown);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
+    }
+  }
+
+  /**
+   * Handle "Export as Markdown" action from canvas context menu
+   *
+   * Requirements:
+   * - 8.5: Provide export options in canvas context menu
+   */
+  private async handleExportMarkdownFromCanvas(): Promise<void> {
+    try {
+      // Export the entire mindmap to Markdown
+      const markdown = this.exportAsMarkdown();
+
+      // Copy to clipboard
+      await navigator.clipboard.writeText(markdown);
+
+      // Optional: Show a brief success notification
+      console.log('Exported entire mindmap to clipboard');
+    } catch (error) {
+      console.error('Failed to export markdown:', error);
     }
   }
 
@@ -1239,6 +1293,147 @@ export class Markmap {
     // Add cleanup to dispose list
     this._disposeList.push(() => {
       document.removeEventListener('keydown', handleKeyDown);
+    });
+  }
+
+  /**
+   * Sets up canvas context menu for right-click on empty canvas area.
+   *
+   * When the user right-clicks on the canvas (not on a node), a context menu
+   * with export options should be displayed.
+   *
+   * Requirements:
+   * - 8.5: Display canvas-level context menu on canvas right-click with export options
+   */
+  private setupCanvasContextMenu(): void {
+    const svgNode = this.svg.node();
+    if (!svgNode) return;
+
+    // Add context menu listener to the SVG element
+    svgNode.addEventListener('contextmenu', this.handleCanvasContextMenu);
+
+    // Add cleanup to dispose list
+    this._disposeList.push(() => {
+      svgNode.removeEventListener('contextmenu', this.handleCanvasContextMenu);
+    });
+  }
+
+  /**
+   * Sets up Space key drag functionality for canvas panning.
+   *
+   * When the user holds down the Space key and drags the mouse,
+   * the canvas view should pan accordingly.
+   *
+   * Requirements:
+   * - 8.2: Pan canvas view when user holds Space key and drags mouse
+   */
+  private setupSpaceKeyDrag(): void {
+    const svgNode = this.svg.node();
+    if (!svgNode) return;
+
+    // Track Space key state
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Check if Space key is pressed
+      if (e.key === ' ') {
+        // Always prevent default space key behavior (page scroll)
+        e.preventDefault();
+
+        // Only activate drag mode if not already pressed
+        if (!this._spaceKeyPressed) {
+          this._spaceKeyPressed = true;
+
+          // Change cursor to indicate drag mode
+          svgNode.style.cursor = 'grab';
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ') {
+        this._spaceKeyPressed = false;
+        this._isDragging = false;
+
+        // Reset cursor
+        svgNode.style.cursor = '';
+      }
+    };
+
+    // Handle mouse events for dragging
+    const handleMouseDown = (e: MouseEvent) => {
+      if (this._spaceKeyPressed) {
+        e.preventDefault();
+        this._isDragging = true;
+        this._dragStartX = e.clientX;
+        this._dragStartY = e.clientY;
+
+        // Change cursor to indicate active dragging
+        svgNode.style.cursor = 'grabbing';
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (this._spaceKeyPressed && this._isDragging) {
+        e.preventDefault();
+
+        // Calculate the delta movement
+        const dx = e.clientX - this._dragStartX;
+        const dy = e.clientY - this._dragStartY;
+
+        // Update drag start position for next move
+        this._dragStartX = e.clientX;
+        this._dragStartY = e.clientY;
+
+        // Pan the canvas
+        const transform = zoomTransform(svgNode);
+        const newTransform = transform.translate(
+          dx / transform.k,
+          dy / transform.k,
+        );
+        this.svg.call(this.zoom.transform, newTransform);
+      }
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (this._isDragging) {
+        e.preventDefault();
+        this._isDragging = false;
+
+        // Change cursor back to grab (Space is still held)
+        if (this._spaceKeyPressed) {
+          svgNode.style.cursor = 'grab';
+        }
+      }
+    };
+
+    // Handle case where mouse leaves the SVG while dragging
+    const handleMouseLeave = () => {
+      if (this._isDragging) {
+        this._isDragging = false;
+
+        // Change cursor back to grab if Space is still held
+        if (this._spaceKeyPressed) {
+          svgNode.style.cursor = 'grab';
+        }
+      }
+    };
+
+    // Add event listeners
+    // Use capture phase to ensure our handlers run before D3's zoom handlers
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keyup', handleKeyUp);
+    svgNode.addEventListener('mousedown', handleMouseDown, true);
+    svgNode.addEventListener('mousemove', handleMouseMove, true);
+    svgNode.addEventListener('mouseup', handleMouseUp, true);
+    svgNode.addEventListener('mouseleave', handleMouseLeave, true);
+
+    // Add cleanup to dispose list
+    this._disposeList.push(() => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keyup', handleKeyUp);
+      svgNode.removeEventListener('mousedown', handleMouseDown, true);
+      svgNode.removeEventListener('mousemove', handleMouseMove, true);
+      svgNode.removeEventListener('mouseup', handleMouseUp, true);
+      svgNode.removeEventListener('mouseleave', handleMouseLeave, true);
     });
   }
 

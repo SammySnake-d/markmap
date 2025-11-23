@@ -19,7 +19,168 @@ export function createMockSVG(): SVGSVGElement {
       querySelectorAll: () => [],
     } as any;
   }
-  return document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+
+  // Mock SVG-specific properties that D3.js needs
+  // These properties are not fully implemented in jsdom
+  Object.defineProperty(svg, 'transform', {
+    get() {
+      return {
+        baseVal: {
+          numberOfItems: 0,
+          getItem: () => null,
+          appendItem: () => {},
+          clear: () => {},
+        },
+        animVal: {
+          numberOfItems: 0,
+        },
+      };
+    },
+    configurable: true,
+  });
+
+  // Mock getBBox for SVG elements
+  if (!svg.getBBox) {
+    svg.getBBox = () => ({
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
+    });
+  }
+
+  // Mock getScreenCTM for coordinate transformations
+  if (!svg.getScreenCTM) {
+    svg.getScreenCTM = () =>
+      ({
+        a: 1,
+        b: 0,
+        c: 0,
+        d: 1,
+        e: 0,
+        f: 0,
+        inverse: () => ({
+          a: 1,
+          b: 0,
+          c: 0,
+          d: 1,
+          e: 0,
+          f: 0,
+        }),
+      }) as any;
+  }
+
+  // Mock createSVGPoint for coordinate calculations
+  if (!svg.createSVGPoint) {
+    svg.createSVGPoint = () =>
+      ({
+        x: 0,
+        y: 0,
+        matrixTransform: () => ({ x: 0, y: 0 }),
+      }) as any;
+  }
+
+  // Mock viewBox property (required by d3-zoom)
+  Object.defineProperty(svg, 'viewBox', {
+    get() {
+      return {
+        baseVal: {
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+        },
+        animVal: {
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+        },
+      };
+    },
+    configurable: true,
+  });
+
+  // Mock clientWidth and clientHeight
+  Object.defineProperty(svg, 'clientWidth', {
+    get() {
+      return 800;
+    },
+    configurable: true,
+  });
+
+  Object.defineProperty(svg, 'clientHeight', {
+    get() {
+      return 600;
+    },
+    configurable: true,
+  });
+
+  // Mock getBoundingClientRect
+  if (!svg.getBoundingClientRect) {
+    svg.getBoundingClientRect = () =>
+      ({
+        x: 0,
+        y: 0,
+        width: 800,
+        height: 600,
+        top: 0,
+        left: 0,
+        right: 800,
+        bottom: 600,
+        toJSON: () => {},
+      }) as DOMRect;
+  }
+
+  // Mock ownerDocument for D3 drag/zoom compatibility
+  Object.defineProperty(svg, 'ownerDocument', {
+    get() {
+      return document;
+    },
+    configurable: true,
+  });
+
+  // Override appendChild to also add transform property to child elements
+  const originalAppendChild = svg.appendChild.bind(svg);
+  svg.appendChild = function <T extends Node>(node: T): T {
+    if (
+      node.nodeType === 1 &&
+      (node as any).namespaceURI === 'http://www.w3.org/2000/svg'
+    ) {
+      // Add transform property to SVG child elements
+      Object.defineProperty(node, 'transform', {
+        get() {
+          return {
+            baseVal: {
+              numberOfItems: 0,
+              getItem: () => null,
+              appendItem: () => {},
+              clear: () => {},
+            },
+            animVal: {
+              numberOfItems: 0,
+            },
+          };
+        },
+        configurable: true,
+      });
+
+      // Add getBBox if not present
+      if (!(node as any).getBBox) {
+        (node as any).getBBox = () => ({
+          x: 0,
+          y: 0,
+          width: 50,
+          height: 20,
+        });
+      }
+    }
+    return originalAppendChild(node);
+  };
+
+  return svg;
 }
 
 /**

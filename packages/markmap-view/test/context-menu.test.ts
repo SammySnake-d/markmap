@@ -211,4 +211,101 @@ describe('ContextMenu', () => {
     container = document.querySelector('.markmap-context-menu');
     expect(container).toBeFalsy();
   });
+
+  describe('Canvas Context Menu', () => {
+    test('shows canvas menu at specified position', () => {
+      contextMenu = new ContextMenu();
+
+      contextMenu.showCanvasMenu(150, 250);
+
+      const container = document.querySelector(
+        '.markmap-context-menu',
+      ) as HTMLElement;
+      expect(container.style.display).toBe('block');
+      expect(container.style.left).toBe('150px');
+      expect(container.style.top).toBe('250px');
+    });
+
+    test('displays four export menu items', () => {
+      contextMenu = new ContextMenu();
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      expect(menuItems.length).toBe(4);
+    });
+
+    test('calls onExportPNG callback when PNG option is clicked', () => {
+      const onExportPNG = vi.fn();
+      contextMenu = new ContextMenu({ onExportPNG });
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      const pngItem = menuItems[0] as HTMLElement;
+
+      pngItem.click();
+
+      expect(onExportPNG).toHaveBeenCalled();
+    });
+
+    test('calls onExportJPG callback when JPG option is clicked', () => {
+      const onExportJPG = vi.fn();
+      contextMenu = new ContextMenu({ onExportJPG });
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      const jpgItem = menuItems[1] as HTMLElement;
+
+      jpgItem.click();
+
+      expect(onExportJPG).toHaveBeenCalled();
+    });
+
+    test('calls onExportSVG callback when SVG option is clicked', () => {
+      const onExportSVG = vi.fn();
+      contextMenu = new ContextMenu({ onExportSVG });
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      const svgItem = menuItems[2] as HTMLElement;
+
+      svgItem.click();
+
+      expect(onExportSVG).toHaveBeenCalled();
+    });
+
+    test('calls onExportMarkdown callback when Markdown option is clicked', () => {
+      const onExportMarkdown = vi.fn();
+      contextMenu = new ContextMenu({ onExportMarkdown });
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      const markdownItem = menuItems[3] as HTMLElement;
+
+      markdownItem.click();
+
+      expect(onExportMarkdown).toHaveBeenCalled();
+    });
+
+    test('hides canvas menu after clicking an option', () => {
+      const onExportPNG = vi.fn();
+      contextMenu = new ContextMenu({ onExportPNG });
+
+      contextMenu.showCanvasMenu(100, 200);
+
+      const menuItems = document.querySelectorAll('.markmap-context-menu-item');
+      const pngItem = menuItems[0] as HTMLElement;
+
+      pngItem.click();
+
+      const container = document.querySelector(
+        '.markmap-context-menu',
+      ) as HTMLElement;
+      expect(container.style.display).toBe('none');
+    });
+  });
 });

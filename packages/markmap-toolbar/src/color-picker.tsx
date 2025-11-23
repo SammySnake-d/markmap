@@ -4,11 +4,12 @@ import './color-picker.css';
 /**
  * ColorPicker - 颜色主题选择器组件
  *
- * 提供颜色主题选择菜单，类似 XMind 的连线颜色选择
+ * 提供颜色主题选择菜单，显示预定义的颜色方案
  *
- * Requirements: 9.2, 10.1, 10.2, 10.3
+ * Requirements: 9.2
  */
 
+// 颜色方案接口
 export interface ColorScheme {
   name: string;
   colors: string[];
@@ -30,46 +31,20 @@ export class ColorPicker {
   private currentScheme: string;
 
   // 回调函数
-  onColorSchemeChange: ((scheme: string) => void) | null = null;
-
-  // 默认颜色方案
-  private static readonly DEFAULT_SCHEMES: ColorScheme[] = [
-    {
-      name: 'default',
-      colors: ['#5e6ad2', '#26b5ce', '#f9c52a', '#f98e52', '#e55e5e'],
-    },
-    {
-      name: 'ocean',
-      colors: ['#006d77', '#83c5be', '#edf6f9', '#ffddd2', '#e29578'],
-    },
-    {
-      name: 'forest',
-      colors: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2'],
-    },
-    {
-      name: 'sunset',
-      colors: ['#ff6b6b', '#ee5a6f', '#c44569', '#774c60', '#2d4059'],
-    },
-    {
-      name: 'monochrome',
-      colors: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7'],
-    },
-  ];
+  onColorSchemeChange: ((schemeName: string) => void) | null = null;
 
   constructor(options: ColorPickerOptions = {}) {
     this.options = {
-      schemes: ColorPicker.DEFAULT_SCHEMES,
+      schemes: [],
       currentScheme: 'default',
       position: 'bottom',
       ...options,
     };
-
     this.currentScheme = this.options.currentScheme || 'default';
   }
 
   /**
    * 渲染颜色选择器
-   * Requirements: 10.1, 10.2
    */
   render(): HTMLElement {
     const { schemes, position } = this.options;
@@ -84,7 +59,7 @@ export class ColorPicker {
           title="Color Theme"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-            <path d="M10 2c-4.42 0-8 3.58-8 8s3.58 8 8 8c.55 0 1-.45 1-1 0-.26-.1-.51-.27-.7-.17-.19-.27-.44-.27-.7 0-.55.45-1 1-1h1.18c2.44 0 4.42-1.98 4.42-4.42 0-3.87-3.58-7.18-7.06-7.18zm-5.5 8c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
+            <path d="M10 2c-4.42 0-8 3.58-8 8s3.58 8 8 8c.55 0 1-.45 1-1 0-.26-.1-.51-.27-.71-.17-.2-.27-.45-.27-.71 0-.55.45-1 1-1h1.18c2.49 0 4.52-2.03 4.52-4.52 0-3.87-3.58-7.06-8-7.06zm-5.5 8c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm5 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3 4c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z" />
           </svg>
           <span class="mm-color-label">Theme</span>
           <svg
@@ -100,7 +75,11 @@ export class ColorPicker {
 
         {/* 下拉菜单 */}
         <div class={`mm-color-dropdown mm-color-dropdown-${position}`}>
-          {schemes?.map((scheme) => this.renderSchemeItem(scheme))}
+          {schemes && schemes.length > 0 ? (
+            schemes.map((scheme) => this.renderSchemeItem(scheme))
+          ) : (
+            <div class="mm-color-empty">No color schemes available</div>
+          )}
         </div>
       </div>,
     ) as HTMLElement;
@@ -121,7 +100,6 @@ export class ColorPicker {
 
   /**
    * 渲染单个颜色方案项
-   * Requirements: 10.3
    */
   private renderSchemeItem(scheme: ColorScheme): HTMLElement {
     const isActive = scheme.name === this.currentScheme;
@@ -132,19 +110,14 @@ export class ColorPicker {
         onClick={() => this.handleSchemeChange(scheme.name)}
         title={scheme.name}
       >
-        {/* 颜色方案名称 */}
-        <span class="mm-color-item-name">{scheme.name}</span>
-
         {/* 颜色预览 */}
         <div class="mm-color-preview">
           {scheme.colors.slice(0, 5).map((color) => (
-            <span
-              class="mm-color-preview-dot"
-              style={{ backgroundColor: color }}
-            />
+            <span class="mm-color-dot" style={{ backgroundColor: color }} />
           ))}
         </div>
-
+        {/* 方案名称 */}
+        <span class="mm-color-name">{scheme.name}</span>
         {/* 选中标记 */}
         {isActive && (
           <svg
@@ -205,69 +178,44 @@ export class ColorPicker {
 
   /**
    * 处理颜色方案切换
-   * Requirements: 10.4
    */
   private handleSchemeChange(schemeName: string): void {
-    // 先关闭菜单
+    this.currentScheme = schemeName;
+
+    if (this.onColorSchemeChange) {
+      this.onColorSchemeChange(schemeName);
+    }
+
+    // 重新渲染以更新选中状态
+    this.refresh();
     this.close();
-
-    if (schemeName !== this.currentScheme) {
-      this.currentScheme = schemeName;
-
-      // 触发回调
-      if (this.onColorSchemeChange) {
-        this.onColorSchemeChange(schemeName);
-      }
-
-      // 重新渲染以更新选中状态
-      this.refresh();
-    }
   }
 
   /**
-   * 刷新菜单显示
+   * 刷新颜色选择器显示
    */
-  private refresh(): void {
-    if (!this.container || !this.menu) return;
-
-    // 重新渲染菜单项
-    const schemes = this.options.schemes || ColorPicker.DEFAULT_SCHEMES;
-    const newMenu = mountDom(
-      <div
-        class={`mm-color-dropdown mm-color-dropdown-${this.options.position}`}
-      >
-        {schemes.map((scheme) => this.renderSchemeItem(scheme))}
-      </div>,
-    ) as HTMLElement;
-
-    // 保持当前打开/关闭状态
-    if (!this.isOpen) {
-      newMenu.style.display = 'none';
-    }
-
-    // 替换旧菜单
-    if (this.menu.parentNode) {
-      this.menu.parentNode.replaceChild(newMenu, this.menu);
-      this.menu = newMenu;
+  refresh(): void {
+    if (this.container && this.container.parentNode) {
+      const parent = this.container.parentNode;
+      const newContainer = this.render();
+      parent.replaceChild(newContainer, this.container);
     }
   }
 
   /**
-   * 设置当前颜色方案
-   * Requirements: 10.4
+   * 更新当前选中的颜色方案
    */
   setCurrentScheme(schemeName: string): void {
-    if (schemeName !== this.currentScheme) {
-      this.currentScheme = schemeName;
-      this.refresh();
-    }
+    this.currentScheme = schemeName;
+    this.refresh();
   }
 
   /**
-   * 获取当前颜色方案
+   * 更新可用的颜色方案列表
    */
-  getCurrentScheme(): string {
-    return this.currentScheme;
+  updateSchemes(schemes: ColorScheme[]): void {
+    this.options.schemes = schemes;
+    this.refresh();
   }
 
   /**
