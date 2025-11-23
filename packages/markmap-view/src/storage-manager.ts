@@ -5,7 +5,24 @@
  * - 16.1: Auto-save Markdown content when modified
  * - 16.2: Load saved Markdown content and view state on app restart
  * - 16.3: Display warning and run in read-only mode when localStorage unavailable
+ * - 16.6: Save undo/redo history to support undo/redo in standalone HTML
  */
+
+export interface SerializedHistoryEntry {
+  action: 'edit' | 'expand' | 'collapse';
+  nodeId: string; // Store node ID instead of reference
+  before: {
+    inlineNote?: string;
+    detailedNote?: string;
+    fold?: number;
+  };
+  after: {
+    inlineNote?: string;
+    detailedNote?: string;
+    fold?: number;
+  };
+  timestamp: number;
+}
 
 export interface StorageData {
   markdown?: string;
@@ -16,6 +33,10 @@ export interface StorageData {
       k: number;
     };
     expandedNodes?: string[];
+  };
+  history?: {
+    undoStack?: SerializedHistoryEntry[];
+    redoStack?: SerializedHistoryEntry[];
   };
   timestamp?: number;
 }
@@ -169,7 +190,7 @@ export class StorageManager {
 
   /**
    * Validate data integrity.
-   * Requirements: 16.5
+   * Requirements: 16.5, 16.6
    *
    * @param data - Data to validate
    * @returns true if data is valid, false otherwise
@@ -186,7 +207,7 @@ export class StorageManager {
 
     // Check if viewState has valid structure (if present)
     if (data.viewState !== undefined) {
-      if (typeof data.viewState !== 'object') {
+      if (typeof data.viewState !== 'object' || data.viewState === null) {
         return false;
       }
 
@@ -195,9 +216,13 @@ export class StorageManager {
         const { transform } = data.viewState;
         if (
           typeof transform !== 'object' ||
+          transform === null ||
           typeof transform.x !== 'number' ||
           typeof transform.y !== 'number' ||
-          typeof transform.k !== 'number'
+          typeof transform.k !== 'number' ||
+          !isFinite(transform.x) ||
+          !isFinite(transform.y) ||
+          !isFinite(transform.k)
         ) {
           return false;
         }
@@ -208,7 +233,132 @@ export class StorageManager {
         if (!Array.isArray(data.viewState.expandedNodes)) {
           return false;
         }
+        // Validate that all elements are strings
+        for (const node of data.viewState.expandedNodes) {
+          if (typeof node !== 'string') {
+            return false;
+          }
+        }
       }
+    }
+
+    // Validate history if present
+    // Requirements: 16.6
+    if (data.history !== undefined) {
+      if (typeof data.history !== 'object' || data.history === null) {
+        return false;
+      }
+
+      // Validate undoStack if present
+      if (data.history.undoStack !== undefined) {
+        if (!Array.isArray(data.history.undoStack)) {
+          return false;
+        }
+        for (const entry of data.history.undoStack) {
+          if (!this.validateHistoryEntry(entry)) {
+            return false;
+          }
+        }
+      }
+
+      // Validate redoStack if present
+      if (data.history.redoStack !== undefined) {
+        if (!Array.isArray(data.history.redoStack)) {
+          return false;
+        }
+        for (const entry of data.history.redoStack) {
+          if (!this.validateHistoryEntry(entry)) {
+            return false;
+          }
+        }
+      }
+    }
+
+    // Validate timestamp if present
+    if (
+      data.timestamp !== undefined &&
+      (typeof data.timestamp !== 'number' || !isFinite(data.timestamp))
+    ) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Validate a single history entry.
+   * Requirements: 16.6
+   *
+   * @param entry - History entry to validate
+   * @returns true if entry is valid, false otherwise
+   */
+  private validateHistoryEntry(entry: any): boolean {
+    if (!entry || typeof entry !== 'object') {
+      return false;
+    }
+
+    // Validate action
+    if (
+      typeof entry.action !== 'string' ||
+      !['edit', 'expand', 'collapse'].includes(entry.action)
+    ) {
+      return false;
+    }
+
+    // Validate nodeId
+    if (typeof entry.nodeId !== 'string') {
+      return false;
+    }
+
+    // Validate before state
+    if (!this.validateHistoryState(entry.before)) {
+      return false;
+    }
+
+    // Validate after state
+    if (!this.validateHistoryState(entry.after)) {
+      return false;
+    }
+
+    // Validate timestamp
+    if (typeof entry.timestamp !== 'number' || !isFinite(entry.timestamp)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Validate a history state object.
+   * Requirements: 16.6
+   *
+   * @param state - State object to validate
+   * @returns true if state is valid, false otherwise
+   */
+  private validateHistoryState(state: any): boolean {
+    if (!state || typeof state !== 'object') {
+      return false;
+    }
+
+    // Validate inlineNote if present
+    if (
+      state.inlineNote !== undefined &&
+      typeof state.inlineNote !== 'string'
+    ) {
+      return false;
+    }
+
+    // Validate detailedNote if present
+    if (
+      state.detailedNote !== undefined &&
+      typeof state.detailedNote !== 'string'
+    ) {
+      return false;
+    }
+
+    // Validate fold if present
+    if (state.fold !== undefined && typeof state.fold !== 'number') {
+      return false;
     }
 
     return true;

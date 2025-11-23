@@ -255,4 +255,170 @@ export class UndoManager {
   public getMaxStackSize(): number {
     return this.maxStackSize;
   }
+
+  /**
+   * Serializes the history stacks for persistence.
+   *
+   * Requirements: 16.6
+   *
+   * This method converts the history stacks into a format that can be
+   * stored in localStorage. Node references are converted to node IDs.
+   *
+   * @returns Serialized history data
+   */
+  public serialize(): {
+    undoStack: Array<{
+      action: 'edit' | 'expand' | 'collapse';
+      nodeId: string;
+      before: {
+        inlineNote?: string;
+        detailedNote?: string;
+        fold?: number;
+      };
+      after: {
+        inlineNote?: string;
+        detailedNote?: string;
+        fold?: number;
+      };
+      timestamp: number;
+    }>;
+    redoStack: Array<{
+      action: 'edit' | 'expand' | 'collapse';
+      nodeId: string;
+      before: {
+        inlineNote?: string;
+        detailedNote?: string;
+        fold?: number;
+      };
+      after: {
+        inlineNote?: string;
+        detailedNote?: string;
+        fold?: number;
+      };
+      timestamp: number;
+    }>;
+  } {
+    return {
+      undoStack: this.undoStack.map((entry) => ({
+        action: entry.action,
+        nodeId: this.getNodeId(entry.node),
+        before: { ...entry.before },
+        after: { ...entry.after },
+        timestamp: entry.timestamp,
+      })),
+      redoStack: this.redoStack.map((entry) => ({
+        action: entry.action,
+        nodeId: this.getNodeId(entry.node),
+        before: { ...entry.before },
+        after: { ...entry.after },
+        timestamp: entry.timestamp,
+      })),
+    };
+  }
+
+  /**
+   * Restores history stacks from serialized data.
+   *
+   * Requirements: 16.6
+   *
+   * This method restores the history stacks from localStorage data.
+   * Node IDs are converted back to node references using the provided node map.
+   *
+   * @param data - Serialized history data
+   * @param nodeMap - Map of node IDs to node objects
+   */
+  public deserialize(
+    data: {
+      undoStack?: Array<{
+        action: 'edit' | 'expand' | 'collapse';
+        nodeId: string;
+        before: {
+          inlineNote?: string;
+          detailedNote?: string;
+          fold?: number;
+        };
+        after: {
+          inlineNote?: string;
+          detailedNote?: string;
+          fold?: number;
+        };
+        timestamp: number;
+      }>;
+      redoStack?: Array<{
+        action: 'edit' | 'expand' | 'collapse';
+        nodeId: string;
+        before: {
+          inlineNote?: string;
+          detailedNote?: string;
+          fold?: number;
+        };
+        after: {
+          inlineNote?: string;
+          detailedNote?: string;
+          fold?: number;
+        };
+        timestamp: number;
+      }>;
+    },
+    nodeMap: Map<string, IEnhancedNode>,
+  ): void {
+    // Clear existing stacks
+    this.undoStack = [];
+    this.redoStack = [];
+
+    // Restore undo stack
+    if (data.undoStack) {
+      for (const entry of data.undoStack) {
+        const node = nodeMap.get(entry.nodeId);
+        if (node) {
+          this.undoStack.push({
+            action: entry.action,
+            node,
+            before: { ...entry.before },
+            after: { ...entry.after },
+            timestamp: entry.timestamp,
+          });
+        }
+      }
+    }
+
+    // Restore redo stack
+    if (data.redoStack) {
+      for (const entry of data.redoStack) {
+        const node = nodeMap.get(entry.nodeId);
+        if (node) {
+          this.redoStack.push({
+            action: entry.action,
+            node,
+            before: { ...entry.before },
+            after: { ...entry.after },
+            timestamp: entry.timestamp,
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Gets a unique identifier for a node.
+   *
+   * This method generates a unique ID for a node based on its content and position.
+   * The ID is used to serialize node references for persistence.
+   *
+   * @param node - The node to get ID for
+   * @returns A unique identifier string
+   */
+  private getNodeId(node: IEnhancedNode): string {
+    // Use the node's state path as the unique ID
+    // The path is a dot-separated sequence of the node and its ancestors
+    // which provides a stable identifier across sessions
+    if (node.state && node.state.path) {
+      return node.state.path;
+    }
+
+    // Fallback: use a combination of depth and content
+    const depth = node.state?.depth ?? 0;
+    const contentHash = node.content.substring(0, 50); // First 50 chars
+    return `${depth}-${contentHash}`;
+  }
 }
