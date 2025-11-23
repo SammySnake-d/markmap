@@ -118,25 +118,46 @@ export function exportNodeAsMarkdown(node: INode, level: number = 0): string {
 
   // Add content
   if (node.content) {
+    // Extract plain text from HTML content
+    const tempDiv =
+      typeof document !== 'undefined' ? document.createElement('div') : null;
+    let plainContent = node.content;
+
+    if (tempDiv) {
+      tempDiv.innerHTML = node.content;
+      plainContent = tempDiv.textContent || tempDiv.innerText || node.content;
+      plainContent = plainContent.trim();
+    }
+
     // Escape colons in content if there's an inline note
-    const hasInlineNote = (node.payload as any)?.inlineNote;
+    // Notes are stored directly on the node object, not in payload
+    const hasInlineNote = (node as any).inlineNote;
     const content = hasInlineNote
-      ? node.content.replace(/:/g, '\\:')
-      : node.content;
+      ? plainContent.replace(/:/g, '\\:')
+      : plainContent;
     mainLine += content;
   }
 
   // Add inline note if present
-  const inlineNote = (node.payload as any)?.inlineNote;
+  // Notes are stored directly on the node object, not in payload
+  const inlineNote = (node as any).inlineNote;
   if (inlineNote) {
-    const escapedNote = inlineNote.replace(/:/g, '\\:');
+    // Decode HTML entities in inline note
+    let decodedNote = inlineNote;
+    if (typeof document !== 'undefined') {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = inlineNote;
+      decodedNote = tempDiv.textContent || tempDiv.innerText || inlineNote;
+    }
+    const escapedNote = decodedNote.replace(/:/g, '\\:');
     mainLine += `: ${escapedNote}`;
   }
 
   lines.push(mainLine);
 
   // Add detailed note as blockquote if present
-  const detailedNote = (node.payload as any)?.detailedNote;
+  // Notes are stored directly on the node object, not in payload
+  const detailedNote = (node as any).detailedNote;
   if (detailedNote) {
     const noteLines = detailedNote.split('\n');
     for (const noteLine of noteLines) {

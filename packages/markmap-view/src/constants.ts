@@ -10,7 +10,7 @@ export const defaultColorFn = scaleOrdinal(schemeCategory10);
 export const lineWidthFactory =
   (baseWidth = 1, deltaWidth: number = 3, k: number = 2) =>
   (node: INode) =>
-    baseWidth + deltaWidth / k ** node.state.depth;
+    baseWidth + deltaWidth / k ** (node.state?.depth ?? 0);
 
 export const defaultOptions: IMarkmapOptions = {
   autoFit: false,

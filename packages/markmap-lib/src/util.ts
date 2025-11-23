@@ -125,17 +125,19 @@ export function parseInlineNote(
 
   // If no separator found, return the whole content as main content
   if (separatorIndex === -1) {
-    return { mainContent: handleEscape(content, escapeChar) };
+    return {
+      mainContent: decodeHtmlEntities(handleEscape(content, escapeChar)),
+    };
   }
 
   // Split at the first unescaped separator
   const mainContent = content.substring(0, separatorIndex);
   const inlineNote = content.substring(separatorIndex + noteSeparator.length);
 
-  // Remove escape characters from both parts
+  // Remove escape characters and decode HTML entities from both parts
   return {
     mainContent: handleEscape(mainContent.trim(), escapeChar),
-    inlineNote: handleEscape(inlineNote.trim(), escapeChar),
+    inlineNote: decodeHtmlEntities(handleEscape(inlineNote.trim(), escapeChar)),
   };
 }
 
@@ -268,7 +270,7 @@ export function extractBlockquoteContent(
  * @param text - Text containing HTML entities
  * @returns Text with entities decoded
  */
-function decodeHtmlEntities(text: string): string {
+export function decodeHtmlEntities(text: string): string {
   // Named entities
   const entities: Record<string, string> = {
     '&amp;': '&',

@@ -40,7 +40,9 @@
   "dependencies": {
     "@babel/runtime": "^7.22.6",
     "d3": "^7.8.5",
-    "markmap-lib": "workspace:*"
+    "markmap-lib": "workspace:*",
+    "markmap-core": "workspace:*",
+    "markmap-interfaces": "workspace:*"
   },
   "devDependencies": {
     "@gera2ld/jsx-dom": "^2.2.2",

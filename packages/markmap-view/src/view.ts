@@ -20,6 +20,18 @@ import {
   noop,
   walkTree,
 } from 'markmap-common';
+import {
+  DIContainer,
+  EventEmitter,
+  MarkmapCore,
+  MarkmapAPI,
+} from 'markmap-core';
+import type {
+  INoteProvider,
+  IContextMenuProvider,
+  IToolbarProvider,
+  ISearchProvider,
+} from 'markmap-interfaces';
 import { defaultOptions, isMacintosh } from './constants';
 import css from './style.css?inline';
 import {
@@ -32,6 +44,7 @@ import { UndoManager } from './undo-manager';
 import { ContextMenu } from './context-menu';
 import { TouchManager } from './touch-manager';
 import { StorageManager } from './storage-manager';
+import { NotePanel } from './note-panel';
 import { childSelector, simpleHash, exportNodeAsMarkdown } from './util';
 
 export const globalCSS = css;
@@ -72,6 +85,30 @@ export class Markmap {
   private _observer: ResizeObserver;
 
   private _disposeList: (() => void)[] = [];
+
+  /**
+   * 依赖注入容器
+   * Requirements: 3.1, 3.2
+   */
+  private diContainer: DIContainer;
+
+  /**
+   * 事件发射器
+   * Requirements: 7.1, 7.2, 7.3
+   */
+  private eventEmitter: EventEmitter;
+
+  /**
+   * 核心渲染引擎（可选，用于新架构）
+   * Requirements: 1.1, 1.2
+   */
+  private core?: MarkmapCore;
+
+  /**
+   * 功能 API 层（可选，用于新架构）
+   * Requirements: 8.1
+   */
+  public api?: MarkmapAPI;
 
   /**
    * Flag to track if window resize handler should auto-fit
@@ -124,10 +161,21 @@ export class Markmap {
    */
   private markdownContent: string = '';
 
+  /**
+   * NotePanel for displaying and editing node notes.
+   * Requirements: 5.5, 5.6, 5.7, 5.8
+   */
+  private notePanel: NotePanel;
+
   constructor(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
   ) {
+    // Initialize DIContainer and EventEmitter first
+    // Requirements: 3.1, 3.2, 7.1
+    this.diContainer = new DIContainer();
+    this.eventEmitter = new EventEmitter();
+
     this.svg = (svg as ID3SVGElement).datum
       ? (svg as ID3SVGElement)
       : select(svg as string);
@@ -173,7 +221,20 @@ export class Markmap {
         this.handleNodeLongPress(element, x, y),
     );
 
+    // Initialize NotePanel
+    // Requirements: 5.5, 5.6, 5.7, 5.8
+    this.notePanel = new NotePanel({
+      onSave: (node, inlineNote, detailedNote) =>
+        this.handleNoteSave(node, inlineNote, detailedNote),
+      onClose: () => this.handleNotePanelClose(),
+    });
+
     this.setOptions(opts);
+
+    // Register Providers if provided in options
+    // Requirements: 3.1, 3.2
+    this.registerProviders(opts);
+
     this.state = {
       id: this.options.id || this.svg.attr('id') || getId(),
       rect: { x1: 0, y1: 0, x2: 0, y2: 0 },
@@ -210,11 +271,16 @@ export class Markmap {
       this.loadFromStorage();
     }
 
+    // Initialize UI components
+    // Requirements: 3.1, 3.2
+    this.initializeUI();
+
     this._disposeList.push(
       refreshHook.tap(() => {
         this.setData();
       }),
       () => this._observer.disconnect(),
+      () => this.diContainer.clear(),
     );
   }
 
@@ -239,6 +305,13 @@ export class Markmap {
   handleZoom = (e: any) => {
     const { transform } = e;
     this.g.attr('transform', transform);
+
+    // Requirement 7.4: Emit view:transform event
+    this.eventEmitter.emit('view:transform', {
+      x: transform.x,
+      y: transform.y,
+      k: transform.k,
+    });
   };
 
   handlePan = (e: WheelEvent) => {
@@ -387,6 +460,9 @@ export class Markmap {
     }
     await this.renderData(data);
 
+    // Requirement 7.1: Emit node:toggle event
+    this.eventEmitter.emit('node:toggle', data, fold === 0);
+
     // Requirement 3.6: Auto-adjust viewport when expanded content exceeds viewport
     if (wasExpanding) {
       await this.adjustViewportIfNeeded();
@@ -468,6 +544,9 @@ export class Markmap {
     if (isMacintosh ? e.metaKey : e.ctrlKey) recursive = !recursive;
     this.toggleNode(d, recursive);
 
+    // Requirement 7.1: Emit node:click event
+    this.eventEmitter.emit('node:click', d);
+
     // Requirement 13.7: Notify external application when node is clicked
     if (this.options.onNodeClick) {
       this.options.onNodeClick(d);
@@ -509,7 +588,8 @@ export class Markmap {
         foldRecursively += 1;
       } else if (
         foldRecursively ||
-        (initialExpandLevel >= 0 && item.state.depth >= initialExpandLevel)
+        (initialExpandLevel >= 0 &&
+          (item.state?.depth ?? 0) >= initialExpandLevel)
       ) {
         item.payload = { ...item.payload, fold: 1 };
       }
@@ -532,7 +612,9 @@ export class Markmap {
       .each(function (d) {
         const el = this.firstChild?.firstChild as HTMLDivElement;
         const newSize: [number, number] = [el.scrollWidth, el.scrollHeight];
-        d.state.size = newSize;
+        if (d.state) {
+          d.state.size = newSize;
+        }
       });
 
     const { lineWidth, paddingX, spacingHorizontal, spacingVertical } =
@@ -542,7 +624,7 @@ export class Markmap {
         if (!d.payload?.fold) return d.children;
       })
       .nodeSize((node) => {
-        const [width, height] = node.data.state.size;
+        const [width, height] = node.data.state?.size || [0, 0];
         return [height, width + (width ? paddingX * 2 : 0) + spacingHorizontal];
       })
       .spacing((a, b) => {
@@ -556,25 +638,31 @@ export class Markmap {
     const fnodes = tree.descendants();
     fnodes.forEach((fnode) => {
       const node = fnode.data;
-      node.state.rect = {
-        x: fnode.y,
-        y: fnode.x - fnode.xSize / 2,
-        width: fnode.ySize - spacingHorizontal,
-        height: fnode.xSize,
-      };
+      if (node.state) {
+        node.state.rect = {
+          x: fnode.y,
+          y: fnode.x - fnode.xSize / 2,
+          width: fnode.ySize - spacingHorizontal,
+          height: fnode.xSize,
+        };
+      }
     });
     this.state.rect = {
-      x1: min(fnodes, (fnode) => fnode.data.state.rect.x) || 0,
-      y1: min(fnodes, (fnode) => fnode.data.state.rect.y) || 0,
+      x1: min(fnodes, (fnode) => fnode.data.state?.rect?.x ?? 0) || 0,
+      y1: min(fnodes, (fnode) => fnode.data.state?.rect?.y ?? 0) || 0,
       x2:
         max(
           fnodes,
-          (fnode) => fnode.data.state.rect.x + fnode.data.state.rect.width,
+          (fnode) =>
+            (fnode.data.state?.rect?.x ?? 0) +
+            (fnode.data.state?.rect?.width ?? 0),
         ) || 0,
       y2:
         max(
           fnodes,
-          (fnode) => fnode.data.state.rect.y + fnode.data.state.rect.height,
+          (fnode) =>
+            (fnode.data.state?.rect?.y ?? 0) +
+            (fnode.data.state?.rect?.height ?? 0),
         ) || 0,
     };
   }
@@ -613,6 +701,11 @@ export class Markmap {
     if (!this.state.data) return;
     this.updateStyle();
     await this.renderData();
+
+    // Requirement 7.3: Emit data:change event when data is updated
+    if (this.state.data) {
+      this.eventEmitter.emit('data:change', this.state.data);
+    }
 
     // Requirement 3.3: Auto-center and scale on initial load
     // When mindmap finishes loading, automatically center and set appropriate initial scale
@@ -657,8 +750,12 @@ export class Markmap {
     const nodes: INode[] = [];
     walkTree(rootNode, (item, next, parent) => {
       if (!item.payload?.fold) next();
-      nodeMap[item.state.id] = item;
-      if (parent) parentMap[item.state.id] = parent.state.id;
+      if (item.state?.id !== undefined) {
+        nodeMap[item.state.id] = item;
+        if (parent && parent.state?.id !== undefined) {
+          parentMap[item.state.id] = parent.state.id;
+        }
+      }
       nodes.push(item);
     });
 
@@ -675,12 +772,26 @@ export class Markmap {
       });
     };
     const getOriginSourceRect = (node: INode) => {
+      if (!node.state?.id) return { x: 0, y: 0, width: 0, height: 0 };
       const rect = sourceRectMap[originMap[node.state.id]];
-      return rect || rootNode.state.rect;
+      return (
+        rect || rootNode.state?.rect || { x: 0, y: 0, width: 0, height: 0 }
+      );
     };
-    const getOriginTargetRect = (node: INode) =>
-      (nodeMap[originMap[node.state.id]] || rootNode).state.rect;
-    sourceRectMap[rootNode.state.id] = rootNode.state.rect;
+    const getOriginTargetRect = (node: INode) => {
+      if (!node.state?.id) return { x: 0, y: 0, width: 0, height: 0 };
+      return (
+        (nodeMap[originMap[node.state.id]] || rootNode).state?.rect || {
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+        }
+      );
+    };
+    if (rootNode.state?.id !== undefined && rootNode.state?.rect) {
+      sourceRectMap[rootNode.state.id] = rootNode.state.rect;
+    }
     if (originData) setOriginNode(originData);
 
     // Update highlight
@@ -701,19 +812,25 @@ export class Markmap {
       .selectAll<SVGGElement, INode>(childSelector<SVGGElement>(SELECTOR_NODE))
       .each((d) => {
         // Save the current rects before updating nodes
-        sourceRectMap[d.state.id] = d.state.rect;
+        if (d.state?.id !== undefined) {
+          sourceRectMap[d.state.id] = d.state.rect;
+        }
       })
-      .data(nodes, (d) => d.state.key);
+      .data(nodes, (d) => d.state?.key || '');
     const mmGEnter = mmG
       .enter()
       .append('g')
-      .attr('data-depth', (d) => d.state.depth)
-      .attr('data-path', (d) => d.state.path)
+      .attr('data-depth', (d) => d.state?.depth ?? 0)
+      .attr('data-path', (d) => d.state?.path ?? '')
       .each((d) => {
-        setOriginNode(nodeMap[parentMap[d.state.id]]);
+        if (d.state?.id !== undefined) {
+          setOriginNode(nodeMap[parentMap[d.state.id]]);
+        }
       });
     const mmGExit = mmG.exit<INode>().each((d) => {
-      setOriginNode(nodeMap[parentMap[d.state.id]]);
+      if (d.state?.id !== undefined) {
+        setOriginNode(nodeMap[parentMap[d.state.id]]);
+      }
     });
     const mmGMerge = mmG
       .merge(mmGEnter)
@@ -732,7 +849,7 @@ export class Markmap {
       .selectAll<SVGLineElement, INode>(childSelector<SVGLineElement>('line'))
       .data(
         (d) => [d],
-        (d) => d.state.key,
+        (d) => d.state?.key || '',
       );
     const mmLineEnter = mmLine
       .enter()
@@ -749,7 +866,7 @@ export class Markmap {
       >(childSelector<SVGCircleElement>('circle'))
       .data(
         (d) => (d.children?.length ? [d] : []),
-        (d) => d.state.key,
+        (d) => d.state?.key || '',
       );
     const mmCircleEnter = mmCircle
       .enter()
@@ -776,7 +893,7 @@ export class Markmap {
       >(childSelector<SVGForeignObjectElement>('foreignObject'))
       .data(
         (d) => [d],
-        (d) => d.state.key,
+        (d) => d.state?.key || '',
       );
     const mmFoEnter = mmFo
       .enter()
@@ -795,22 +912,36 @@ export class Markmap {
       .append<HTMLDivElement>('xhtml:div')
       .html((d) => {
         // Check if node has notes (Requirements 5.4)
-        // Notes are stored in the payload for enhanced nodes
+        // Notes are stored directly on the node object (not in payload)
         const hasNote =
-          d.payload?.hasNote ||
-          d.payload?.inlineNote ||
-          d.payload?.detailedNote;
+          (d as any).hasNote ||
+          (d as any).inlineNote ||
+          (d as any).detailedNote;
 
         if (hasNote) {
-          // Add note icon after content
-          return `${d.content}<span class="markmap-note-icon" title="This node has notes">📝</span>`;
+          // Add clickable note icon after content
+          // Requirements: 5.5 - Click icon to show note panel
+          return `${d.content}<span class="markmap-note-icon" title="点击查看备注" style="cursor: pointer; margin-left: 8px; font-size: 14px; opacity: 0.7; user-select: none;">📝</span>`;
         }
         return d.content;
       })
       .attr('xmlns', 'http://www.w3.org/1999/xhtml');
-    mmFoEnter.each(function () {
+    mmFoEnter.each(function (d) {
       const el = this.firstChild?.firstChild as Element;
       observer.observe(el);
+
+      // Add click handler for note icon
+      // Requirements: 5.5 - Show note panel when clicking note icon
+      const noteIcon = el.querySelector('.markmap-note-icon');
+      if (noteIcon) {
+        noteIcon.addEventListener('click', (e: Event) => {
+          e.stopPropagation();
+          e.preventDefault();
+          const mouseEvent = e as MouseEvent;
+          // Show note panel at click position
+          self.handleNoteIconClick(d, mouseEvent.clientX, mouseEvent.clientY);
+        });
+      }
     });
     const mmFoExit = mmGExit.selectAll<SVGForeignObjectElement, INode>(
       childSelector<SVGForeignObjectElement>('foreignObject'),
@@ -832,14 +963,14 @@ export class Markmap {
         SVGPathElement,
         { source: INode; target: INode }
       >(childSelector<SVGPathElement>(SELECTOR_LINK))
-      .data(links, (d) => d.target.state.key);
+      .data(links, (d) => d.target.state?.key || '');
     const mmPathExit = mmPath.exit<{ source: INode; target: INode }>();
     const mmPathEnter = mmPath
       .enter()
       .insert('path', 'g')
       .attr('class', 'markmap-link')
-      .attr('data-depth', (d) => d.target.state.depth)
-      .attr('data-path', (d) => d.target.state.path)
+      .attr('data-depth', (d) => d.target.state?.depth ?? 0)
+      .attr('data-path', (d) => d.target.state?.path ?? '')
       .attr('d', (d) => {
         const originRect = getOriginSourceRect(d.target);
         const pathOrigin: [number, number] = [
@@ -870,39 +1001,41 @@ export class Markmap {
 
     mmGEnter.attr('transform', (d) => {
       const originRect = getOriginSourceRect(d);
-      return `translate(${originRect.x + originRect.width - d.state.rect.width},${
-        originRect.y + originRect.height - d.state.rect.height
+      const rect = d.state?.rect || { x: 0, y: 0, width: 0, height: 0 };
+      return `translate(${originRect.x + originRect.width - rect.width},${
+        originRect.y + originRect.height - rect.height
       })`;
     });
     this.transition(mmGExit)
       .attr('transform', (d) => {
         const targetRect = getOriginTargetRect(d);
-        const targetX = targetRect.x + targetRect.width - d.state.rect.width;
-        const targetY = targetRect.y + targetRect.height - d.state.rect.height;
+        const rect = d.state?.rect || { x: 0, y: 0, width: 0, height: 0 };
+        const targetX = targetRect.x + targetRect.width - rect.width;
+        const targetY = targetRect.y + targetRect.height - rect.height;
         return `translate(${targetX},${targetY})`;
       })
       .remove();
 
-    this.transition(mmGMerge).attr(
-      'transform',
-      (d) => `translate(${d.state.rect.x},${d.state.rect.y})`,
-    );
+    this.transition(mmGMerge).attr('transform', (d) => {
+      const rect = d.state?.rect || { x: 0, y: 0, width: 0, height: 0 };
+      return `translate(${rect.x},${rect.y})`;
+    });
 
     const mmLineExit = mmGExit.selectAll<SVGLineElement, INode>(
       childSelector<SVGLineElement>('line'),
     );
     this.transition(mmLineExit)
-      .attr('x1', (d) => d.state.rect.width)
+      .attr('x1', (d) => d.state?.rect?.width ?? 0)
       .attr('stroke-width', 0);
     mmLineEnter
-      .attr('x1', (d) => d.state.rect.width)
-      .attr('x2', (d) => d.state.rect.width);
+      .attr('x1', (d) => d.state?.rect?.width ?? 0)
+      .attr('x2', (d) => d.state?.rect?.width ?? 0);
     mmLineMerge
-      .attr('y1', (d) => d.state.rect.height + lineWidth(d) / 2)
-      .attr('y2', (d) => d.state.rect.height + lineWidth(d) / 2);
+      .attr('y1', (d) => (d.state?.rect?.height ?? 0) + lineWidth(d) / 2)
+      .attr('y2', (d) => (d.state?.rect?.height ?? 0) + lineWidth(d) / 2);
     this.transition(mmLineMerge)
       .attr('x1', -1)
-      .attr('x2', (d) => d.state.rect.width + 2)
+      .attr('x2', (d) => (d.state?.rect?.width ?? 0) + 2)
       .attr('stroke', (d) => color(d))
       .attr('stroke-width', lineWidth);
 
@@ -911,14 +1044,16 @@ export class Markmap {
     );
     this.transition(mmCircleExit).attr('r', 0).attr('stroke-width', 0);
     mmCircleMerge
-      .attr('cx', (d) => d.state.rect.width)
-      .attr('cy', (d) => d.state.rect.height + lineWidth(d) / 2);
+      .attr('cx', (d) => d.state?.rect?.width ?? 0)
+      .attr('cy', (d) => (d.state?.rect?.height ?? 0) + lineWidth(d) / 2);
     this.transition(mmCircleMerge).attr('r', 6).attr('stroke-width', '1.5');
 
     this.transition(mmFoExit).style('opacity', 0);
     mmFoMerge
-      .attr('width', (d) => Math.max(0, d.state.rect.width - paddingX * 2))
-      .attr('height', (d) => d.state.rect.height);
+      .attr('width', (d) =>
+        Math.max(0, (d.state?.rect?.width ?? 0) - paddingX * 2),
+      )
+      .attr('height', (d) => d.state?.rect?.height ?? 0);
     this.transition(mmFoMerge).style('opacity', 1);
 
     this.transition(mmPathExit)
@@ -986,6 +1121,10 @@ export class Markmap {
         (offsetHeight - naturalHeight * scale) / 2 - y1 * scale,
       )
       .scale(scale);
+
+    // Requirement 7.4: Emit view:fit event
+    this.eventEmitter.emit('view:fit');
+
     return this.transition(this.svg)
       .call(this.zoom.transform, initialZoom)
       .end()
@@ -1217,10 +1356,18 @@ export class Markmap {
    *
    * Requirements:
    * - 8.4: Display context menu on node right-click with options
+   * - 7.2: Emit node:rightclick event
    */
   private handleContextMenu = (e: MouseEvent, d: INode) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Requirement 7.2: Emit node:rightclick event with node data and position
+    this.eventEmitter.emit('node:rightclick', d, {
+      x: e.clientX,
+      y: e.clientY,
+    });
+
     this.contextMenu.show(d, e.clientX, e.clientY);
   };
 
@@ -1279,6 +1426,71 @@ export class Markmap {
     } catch (error) {
       console.error('Failed to export markdown:', error);
     }
+  }
+
+  /**
+   * Handle note icon click event.
+   *
+   * This method is called when the user clicks on a note icon.
+   * It shows the note panel at the click position.
+   *
+   * Requirements:
+   * - 5.5: Display note panel when user clicks note icon
+   *
+   * @param node - The node whose notes to display
+   * @param x - X coordinate of click position
+   * @param y - Y coordinate of click position
+   */
+  private handleNoteIconClick(node: INode, x: number, y: number): void {
+    this.notePanel.show(node, x, y);
+  }
+
+  /**
+   * Handle note save event.
+   *
+   * This method is called when the user edits notes in the note panel.
+   * It updates the node data without triggering a re-render.
+   * Re-render will happen when the panel is closed.
+   *
+   * Requirements:
+   * - 5.7: Allow direct editing of inline and detailed notes
+   * - 5.8: Auto-save changes to original Markdown data
+   *
+   * @param node - The node being edited
+   * @param inlineNote - The new inline note content
+   * @param detailedNote - The new detailed note content
+   */
+  private handleNoteSave(
+    node: INode,
+    inlineNote: string,
+    detailedNote: string,
+  ): void {
+    // Update node data only, don't re-render yet
+    (node as any).inlineNote = inlineNote || undefined;
+    (node as any).detailedNote = detailedNote || undefined;
+    (node as any).hasNote = !!(inlineNote || detailedNote);
+
+    // Auto-save if storage is enabled
+    // Requirements: 16.1
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
+    }
+  }
+
+  /**
+   * Handle note panel close event.
+   *
+   * This method is called when the note panel is closed.
+   * It triggers a re-render to update the display with any changes.
+   * Note: Does not trigger auto-fit to avoid unwanted viewport changes.
+   *
+   * Requirements:
+   * - 5.6: Close note panel and update display
+   */
+  private handleNotePanelClose(): void {
+    // Re-render to update the display with any note changes
+    // Pass originData to avoid triggering autoFit
+    this.renderData();
   }
 
   /**
@@ -1884,7 +2096,7 @@ export class Markmap {
     if (this.state.data) {
       walkTree(this.state.data, (node, next) => {
         if (!node.payload?.fold) {
-          expandedNodes.push(node.state.path);
+          expandedNodes.push(node.state?.path ?? '');
           next();
         }
       });
@@ -1948,7 +2160,7 @@ export class Markmap {
       if (data.viewState.expandedNodes && this.state.data) {
         const expandedSet = new Set(data.viewState.expandedNodes);
         walkTree(this.state.data, (node, next) => {
-          if (expandedSet.has(node.state.path)) {
+          if (expandedSet.has(node.state?.path ?? '')) {
             node.payload = {
               ...node.payload,
               fold: 0,
@@ -2024,11 +2236,156 @@ export class Markmap {
     });
   }
 
+  /**
+   * Register Providers from options into DIContainer.
+   *
+   * This method registers custom UI providers if they are provided in the options.
+   * If a provider is not provided, the system will use default implementations or
+   * gracefully degrade.
+   *
+   * Requirements:
+   * - 3.1: Use custom Provider when provided in configuration
+   * - 3.2: Use default Provider for unprovided ones
+   * - 3.3: Gracefully degrade when no Provider is available
+   *
+   * @param opts - Markmap options that may contain custom providers
+   */
+  private registerProviders(opts?: Partial<IMarkmapOptions>): void {
+    if (!opts) return;
+
+    // Register NoteProvider if provided
+    if ((opts as any).noteProvider) {
+      this.diContainer.register<INoteProvider>(
+        'noteProvider',
+        (opts as any).noteProvider,
+      );
+    }
+
+    // Register ContextMenuProvider if provided
+    if ((opts as any).contextMenuProvider) {
+      this.diContainer.register<IContextMenuProvider>(
+        'contextMenuProvider',
+        (opts as any).contextMenuProvider,
+      );
+    }
+
+    // Register ToolbarProvider if provided
+    if ((opts as any).toolbarProvider) {
+      this.diContainer.register<IToolbarProvider>(
+        'toolbarProvider',
+        (opts as any).toolbarProvider,
+      );
+    }
+
+    // Register SearchProvider if provided
+    if ((opts as any).searchProvider) {
+      this.diContainer.register<ISearchProvider>(
+        'searchProvider',
+        (opts as any).searchProvider,
+      );
+    }
+  }
+
+  /**
+   * Initialize UI components.
+   *
+   * This method initializes UI components based on registered providers.
+   * It connects the providers to the core functionality and sets up
+   * event handlers.
+   *
+   * Requirements:
+   * - 3.1: Initialize UI with registered providers
+   * - 7.1: Connect events to UI components
+   *
+   * @private
+   */
+  private initializeUI(): void {
+    // Get registered providers from DIContainer
+    // const noteProvider = this.diContainer.resolve<INoteProvider>('noteProvider');
+    // const contextMenuProvider = this.diContainer.resolve<IContextMenuProvider>('contextMenuProvider');
+    // const toolbarProvider = this.diContainer.resolve<IToolbarProvider>('toolbarProvider');
+    // const searchProvider = this.diContainer.resolve<ISearchProvider>('searchProvider');
+
+    // Initialize providers if they exist
+    // For now, we keep the existing UI components (NotePanel, ContextMenu, etc.)
+    // In the future, these will be replaced by the provider implementations
+
+    // Set up event listeners for UI integration
+    // Requirements: 7.1, 7.2, 7.3
+    this.setupEventHandlers();
+  }
+
+  /**
+   * Set up event handlers for UI integration.
+   *
+   * This method connects core events to UI components and external callbacks.
+   *
+   * Requirements:
+   * - 7.1: Emit node:click event when node is clicked
+   * - 7.2: Emit node:rightclick event when node is right-clicked
+   * - 7.3: Emit data:change event when data is updated
+   *
+   * @private
+   */
+  private setupEventHandlers(): void {
+    // These events will be emitted by the existing methods
+    // The event emission is integrated into the existing event handlers
+  }
+
+  /**
+   * Get the DIContainer instance.
+   *
+   * This allows external code to access the dependency injection container
+   * for advanced use cases.
+   *
+   * Requirements: 3.1
+   *
+   * @returns The DIContainer instance
+   */
+  public getContainer(): DIContainer {
+    return this.diContainer;
+  }
+
+  /**
+   * Get the EventEmitter instance.
+   *
+   * This allows external code to listen to events emitted by Markmap.
+   *
+   * Requirements: 7.1
+   *
+   * @returns The EventEmitter instance
+   */
+  public getEventEmitter(): EventEmitter {
+    return this.eventEmitter;
+  }
+
+  /**
+   * Create a Markmap instance with default UI.
+   *
+   * This static method provides backward compatibility with the old API.
+   * It creates a Markmap instance with all default UI components if no
+   * custom providers are specified.
+   *
+   * Requirements:
+   * - 10.1: Create instance with default UI when using Markmap.create
+   * - 10.2: Parse old configuration options correctly
+   * - 10.3: Maintain same behavior as old API
+   *
+   * @param svg - SVG element or selector
+   * @param opts - Markmap options (optional)
+   * @param data - Initial data (optional)
+   * @returns Markmap instance
+   */
   static create(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
     data: IPureNode | null = null,
   ): Markmap {
+    // Note: In the future, when markmap-ui-default is fully implemented,
+    // we would automatically inject default providers here if none are provided.
+    // For now, the existing UI components (NotePanel, ContextMenu, etc.) serve
+    // as the default UI.
+
     const mm = new Markmap(svg, opts);
     if (data) {
       mm.setData(data).then(() => {

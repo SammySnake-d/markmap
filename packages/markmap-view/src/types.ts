@@ -1,4 +1,10 @@
 import { INode } from 'markmap-common';
+import type {
+  INoteProvider,
+  IContextMenuProvider,
+  IToolbarProvider,
+  ISearchProvider,
+} from 'markmap-interfaces';
 
 export interface IMarkmapState {
   id: string;
@@ -65,6 +71,13 @@ export interface IMarkmapOptions {
   paddingX: number;
   spacingHorizontal: number;
   spacingVertical: number;
+
+  // UI Providers (optional)
+  // Requirements: 3.1, 3.2
+  noteProvider?: INoteProvider;
+  contextMenuProvider?: IContextMenuProvider;
+  toolbarProvider?: IToolbarProvider;
+  searchProvider?: ISearchProvider;
 
   // Callback functions
   // Requirements: 13.7

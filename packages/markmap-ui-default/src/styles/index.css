@@ -1,0 +1,44 @@
+/**
+ * Markmap UI Default - 统一样式入口
+ * 
+ * Requirements: 9.1 - 整合所有默认UI样式
+ */
+
+@import './note-panel.css';
+@import './context-menu.css';
+@import './toolbar.css';
+
+/**
+ * 全局样式
+ */
+* {
+  box-sizing: border-box;
+}
+
+/**
+ * 通用动画
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.markmap-note-panel,
+.markmap-context-menu {
+  animation: fadeIn 0.2s ease-out;
+}

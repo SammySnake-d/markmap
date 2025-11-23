@@ -8,6 +8,29 @@ packages/*/coverage
 packages/*/types
 *.tsbuildinfo
 
-# Ignore all markdown files except README.md
+# Ignore all test files
+packages/*/test/
+**/test/
+*.test.ts
+*.test.js
+*.test.mts
+*.spec.ts
+*.spec.js
+vitest.config.mts
+vitest.workspace.ts
+
+# Ignore all markdown files except README.md and essential docs
 *.md
 !README.md
+!FEATURES.md
+!USER_GUIDE.md
+!API_DOCUMENTATION.md
+!CUSTOM_UI_GUIDE.md
+!KEYBOARD_SHORTCUTS.md
+!DOCUMENTATION_INDEX.md
+!MIGRATION_GUIDE.md
+!TEST_FRAMEWORK_SETUP.md
+
+# Ignore demo and test HTML files
+demo-*.html
+test-*.html

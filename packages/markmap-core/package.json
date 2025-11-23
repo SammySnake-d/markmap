@@ -1,0 +1,45 @@
+{
+  "name": "markmap-core",
+  "version": "0.1.0",
+  "description": "Markmap core rendering engine with dependency injection",
+  "author": "Gerald <gera2ld@live.cn>",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist tsconfig.tsbuildinfo",
+    "build:types": "tsc",
+    "build:js": "vite build",
+    "build": "pnpm clean && pnpm /^build:/",
+    "prepublishOnly": "pnpm build",
+    "test": "vitest --run"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "d3-flextree": "^2.1.2",
+    "markmap-common": "workspace:*",
+    "markmap-interfaces": "workspace:*",
+    "markmap-lib": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/jsdom": "^27.0.0",
+    "fast-check": "^3.22.0",
+    "jsdom": "^27.2.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.0"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "name": "markmap-ui-default",
+  "version": "0.1.0",
+  "description": "Default UI implementation for Markmap",
+  "author": "Markmap Team",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build:types": "tsc --declaration --emitDeclarationOnly --outDir dist",
+    "build:js": "vite build",
+    "build": "pnpm clean && pnpm build:types && pntml build:js",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "markmap-common": "workspace:*",
+    "markmap-interfaces": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0",
+    "fast-check": "^3.0.0",
+    "jsdom": "^24.0.0",
+    "@types/node": "^20.0.0"
+  }
+}
