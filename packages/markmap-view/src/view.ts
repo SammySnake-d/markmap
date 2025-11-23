@@ -31,6 +31,7 @@ import {
 import { UndoManager } from './undo-manager';
 import { ContextMenu } from './context-menu';
 import { TouchManager } from './touch-manager';
+import { StorageManager } from './storage-manager';
 import { childSelector, simpleHash, exportNodeAsMarkdown } from './util';
 
 export const globalCSS = css;
@@ -111,6 +112,18 @@ export class Markmap {
    */
   private touchManager: TouchManager;
 
+  /**
+   * StorageManager for handling data persistence to localStorage.
+   * Requirements: 16.1, 16.2, 16.3
+   */
+  private storageManager: StorageManager | null = null;
+
+  /**
+   * Original markdown content for persistence.
+   * Requirements: 16.1
+   */
+  private markdownContent: string = '';
+
   constructor(
     svg: string | SVGElement | ID3SVGElement,
     opts?: Partial<IMarkmapOptions>,
@@ -188,6 +201,14 @@ export class Markmap {
     // Setup canvas right-click menu
     // Requirements: 8.5
     this.setupCanvasContextMenu();
+
+    // Initialize StorageManager if auto-save is enabled
+    // Requirements: 16.1, 16.2, 16.3
+    if (this.options.enableAutoSave) {
+      this.storageManager = new StorageManager(this.options.storageKey);
+      // Try to load saved data
+      this.loadFromStorage();
+    }
 
     this._disposeList.push(
       refreshHook.tap(() => {
@@ -370,6 +391,12 @@ export class Markmap {
     if (wasExpanding) {
       await this.adjustViewportIfNeeded();
     }
+
+    // Auto-save after node state changes
+    // Requirements: 16.1
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
+    }
   }
 
   /**
@@ -398,6 +425,12 @@ export class Markmap {
 
     // Requirement 3.6: Auto-adjust viewport when expanded content exceeds viewport
     await this.adjustViewportIfNeeded();
+
+    // Auto-save after expand all
+    // Requirements: 16.1
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
+    }
   }
 
   /**
@@ -422,6 +455,12 @@ export class Markmap {
     });
 
     await this.renderData(targetNode);
+
+    // Auto-save after collapse all
+    // Requirements: 16.1
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
+    }
   }
 
   handleClick = (e: MouseEvent, d: INode) => {
@@ -575,6 +614,12 @@ export class Markmap {
     if (this._isFirstLoad) {
       this._isFirstLoad = false;
       await this.fit();
+    }
+
+    // Auto-save after data changes
+    // Requirements: 16.1
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
     }
   }
 
@@ -1806,6 +1851,156 @@ export class Markmap {
       .transition()
       .duration(duration)
       .attr('stroke', (d) => colorFn(d.target.data));
+  }
+
+  /**
+   * Save current state to localStorage.
+   *
+   * This method saves the current markdown content and view state
+   * (transform and expanded nodes) to localStorage.
+   *
+   * Requirements:
+   * - 16.1: Auto-save Markdown content when modified
+   *
+   * @returns true if save was successful, false otherwise
+   */
+  saveToStorage(): boolean {
+    if (!this.storageManager || this.storageManager.isReadOnly()) {
+      return false;
+    }
+
+    const svgNode = this.svg.node();
+    if (!svgNode) return false;
+
+    const transform = zoomTransform(svgNode);
+
+    // Collect expanded node paths
+    const expandedNodes: string[] = [];
+    if (this.state.data) {
+      walkTree(this.state.data, (node, next) => {
+        if (!node.payload?.fold) {
+          expandedNodes.push(node.state.path);
+          next();
+        }
+      });
+    }
+
+    return this.storageManager.save({
+      markdown: this.markdownContent,
+      viewState: {
+        transform: {
+          x: transform.x,
+          y: transform.y,
+          k: transform.k,
+        },
+        expandedNodes,
+      },
+    });
+  }
+
+  /**
+   * Load saved state from localStorage.
+   *
+   * This method loads the saved markdown content and view state
+   * from localStorage and applies it to the current mindmap.
+   *
+   * Requirements:
+   * - 16.2: Load saved Markdown content and view state on app restart
+   *
+   * @returns true if load was successful, false otherwise
+   */
+  loadFromStorage(): boolean {
+    if (!this.storageManager) {
+      return false;
+    }
+
+    const data = this.storageManager.load();
+    if (!data) {
+      return false;
+    }
+
+    // Restore markdown content
+    if (data.markdown) {
+      this.markdownContent = data.markdown;
+      // Note: The actual parsing and rendering of markdown should be done
+      // by the caller (e.g., using Transformer from markmap-lib)
+      // This method only restores the raw markdown content
+    }
+
+    // Restore view state
+    if (data.viewState) {
+      // Restore transform
+      if (data.viewState.transform) {
+        const { x, y, k } = data.viewState.transform;
+        const svgNode = this.svg.node();
+        if (svgNode) {
+          const newTransform = zoomIdentity.translate(x, y).scale(k);
+          this.svg.call(this.zoom.transform, newTransform);
+        }
+      }
+
+      // Restore expanded nodes
+      if (data.viewState.expandedNodes && this.state.data) {
+        const expandedSet = new Set(data.viewState.expandedNodes);
+        walkTree(this.state.data, (node, next) => {
+          if (expandedSet.has(node.state.path)) {
+            node.payload = {
+              ...node.payload,
+              fold: 0,
+            };
+            next();
+          } else {
+            node.payload = {
+              ...node.payload,
+              fold: 1,
+            };
+          }
+        });
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Set markdown content and optionally save to storage.
+   *
+   * This method updates the internal markdown content and triggers
+   * auto-save if enabled.
+   *
+   * Requirements:
+   * - 16.1: Auto-save Markdown content when modified
+   *
+   * @param markdown - The markdown content to set
+   */
+  setMarkdownContent(markdown: string): void {
+    this.markdownContent = markdown;
+
+    // Auto-save if enabled
+    if (this.options.enableAutoSave && this.storageManager) {
+      this.saveToStorage();
+    }
+  }
+
+  /**
+   * Get current markdown content.
+   *
+   * @returns The current markdown content
+   */
+  getMarkdownContent(): string {
+    return this.markdownContent;
+  }
+
+  /**
+   * Check if storage is in read-only mode.
+   *
+   * Requirements:
+   * - 16.3: Display warning and run in read-only mode when localStorage unavailable
+   *
+   * @returns true if in read-only mode, false otherwise
+   */
+  isStorageReadOnly(): boolean {
+    return this.storageManager?.isReadOnly() ?? false;
   }
 
   destroy() {

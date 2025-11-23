@@ -24,6 +24,8 @@ export const defaultOptions: IMarkmapOptions = {
   pan: true,
   toggleRecursively: false,
   enableTouch: true, // Enable touch gestures by default (Requirements: 11.2, 11.3)
+  enableAutoSave: false, // Disabled by default (Requirements: 16.1, 16.2, 16.3)
+  storageKey: 'markmap-data', // Default storage key (Requirements: 16.1, 16.2)
 
   color: (node: INode): string => defaultColorFn(`${node.state?.path || ''}`),
   lineWidth: lineWidthFactory(),

@@ -52,6 +52,11 @@ export interface IMarkmapOptions {
   // Requirements: 11.2, 11.3
   enableTouch?: boolean; // Enable touch gestures (default: true)
 
+  // Storage options
+  // Requirements: 16.1, 16.2, 16.3
+  enableAutoSave?: boolean; // Enable auto-save to localStorage (default: false)
+  storageKey?: string; // Custom localStorage key (default: 'markmap-data')
+
   // Theme options
   color: (node: INode) => string;
   lineWidth: (node: INode) => number;

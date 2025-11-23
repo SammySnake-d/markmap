@@ -9,3 +9,4 @@ export * from './undo-manager';
 export * from './search-manager';
 export * from './color-manager';
 export * from './touch-manager';
+export * from './storage-manager';
