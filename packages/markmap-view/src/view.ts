@@ -1799,25 +1799,38 @@ export class Markmap {
     // Clone the SVG node to avoid modifying the original
     const clonedSvg = svgNode.cloneNode(true) as SVGElement;
 
-    // Get the bounding box of the content
+    // Use the same rect calculation as fit() method
     const { x1, y1, x2, y2 } = this.state.rect;
-    const width = x2 - x1;
-    const height = y2 - y1;
+    const naturalWidth = x2 - x1;
+    const naturalHeight = y2 - y1;
 
     // Add padding to ensure content is not clipped
-    const padding = 20;
-    const viewBoxX = x1 - padding;
-    const viewBoxY = y1 - padding;
-    const viewBoxWidth = width + padding * 2;
-    const viewBoxHeight = height + padding * 2;
+    const padding = 40;
 
-    // Set viewBox to match content bounds with padding
-    clonedSvg.setAttribute(
-      'viewBox',
-      `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`,
-    );
-    clonedSvg.setAttribute('width', viewBoxWidth.toString());
-    clonedSvg.setAttribute('height', viewBoxHeight.toString());
+    // Calculate the final dimensions with padding
+    const finalWidth = naturalWidth + padding * 2;
+    const finalHeight = naturalHeight + padding * 2;
+
+    // Calculate the transform to center the content
+    // This uses the same logic as fit() method
+    const translateX = padding - x1;
+    const translateY = padding - y1;
+
+    // Apply the transform to the g element
+    const clonedG = clonedSvg.querySelector('g');
+    if (clonedG) {
+      // Remove any existing transform and apply only our centering translation
+      // This ensures the content is positioned correctly in the exported SVG
+      clonedG.setAttribute(
+        'transform',
+        `translate(${translateX},${translateY})`,
+      );
+    }
+
+    // Set viewBox to start at (0, 0) with the calculated dimensions
+    clonedSvg.setAttribute('viewBox', `0 0 ${finalWidth} ${finalHeight}`);
+    clonedSvg.setAttribute('width', finalWidth.toString());
+    clonedSvg.setAttribute('height', finalHeight.toString());
 
     // Add all necessary XML namespaces
     clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
