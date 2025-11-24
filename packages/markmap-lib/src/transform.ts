@@ -20,7 +20,6 @@ import {
 import {
   patchCSSItem,
   patchJSItem,
-  parseMixedNotes,
   parseInlineNote,
   extractBlockquoteContent,
 } from './util';
@@ -129,12 +128,15 @@ export class Transformer implements ITransformer {
     const content = node.content || '';
 
     // Check if content contains blockquote (detailed note)
-    const blockquoteRegex = /<blockquote[^>]*>[\s\S]*?<\/blockquote>/gi;
-    const hasBlockquote = blockquoteRegex.test(content);
+    // Note: Create a new regex each time to avoid state issues with global flag
+    const hasBlockquote = /<blockquote[^>]*>[\s\S]*?<\/blockquote>/i.test(
+      content,
+    );
 
-    // Check if content contains other HTML tags (excluding blockquote)
+    // Check if content contains other HTML tags (excluding blockquote, p, br, ul, ol, li, strong, em)
+    // We need to be more specific: match opening tags that are NOT in our allowed list
     const nonBlockquoteHtmlRegex =
-      /<(?!blockquote|\/blockquote|p|\/p|br)[^>]+>/i;
+      /<(?!\/?(blockquote|p|br|ul|ol|li|strong|em|b|i)\b)[a-z][^>]*>/i;
     const hasOtherHtml = nonBlockquoteHtmlRegex.test(content);
 
     let parsed: {
@@ -157,6 +159,8 @@ export class Transformer implements ITransformer {
       let detailedNote: string | undefined;
 
       // Extract all blockquotes
+      // Create a new regex for replacement to avoid state issues
+      const blockquoteRegex = /<blockquote[^>]*>[\s\S]*?<\/blockquote>/gi;
       const blockquotes: string[] = [];
       mainContent = content.replace(blockquoteRegex, (match) => {
         blockquotes.push(match);
@@ -189,13 +193,18 @@ export class Transformer implements ITransformer {
       };
     } else {
       // Parse notes from plain text content
-      parsed = parseMixedNotes(
+      // For nodes without blockquotes, only parse inline notes
+      const inlineResult = parseInlineNote(
         content,
-        node.children || [],
         this.separators.note,
-        this.separators.noteBlock,
         this.separators.escape,
       );
+
+      parsed = {
+        mainContent: inlineResult.mainContent,
+        inlineNote: inlineResult.inlineNote,
+        children: node.children || [],
+      };
     }
 
     // Create enhanced node with parsed notes

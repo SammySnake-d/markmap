@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markmap 简单测试</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    #controls {
+      margin-bottom: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      padding: 8px 16px;
+      border: 1px solid #5e6ad2;
+      background: #5e6ad2;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background: #4c5bc7;
+    }
+    
+    #mindmap {
+      width: 100%;
+      height: 600px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+    }
+    
+    #log {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .log-item {
+      margin-bottom: 5px;
+      padding: 5px;
+      border-left: 3px solid #5e6ad2;
+      padding-left: 10px;
+    }
+    
+    .log-item.success {
+      border-left-color: #28a745;
+      background: #d4edda;
+    }
+    
+    .log-item.error {
+      border-left-color: #dc3545;
+      background: #f8d7da;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Markmap 简单测试</h1>
+  
+  <div id="controls">
+    <button onclick="testBasic()">1. 基础渲染</button>
+    <button onclick="testFit()">2. 适应视图</button>
+    <button onclick="testRescale()">3. 缩放</button>
+    <button onclick="testExpandCollapse()">4. 展开/折叠</button>
+    <button onclick="testColor()">5. 配色方案</button>
+    <button onclick="testExport()">6. 导出</button>
+    <button onclick="testEvents()">7. 事件监听</button>
+    <button onclick="clearLog()">清除日志</button>
+  </div>
+  
+  <svg id="mindmap"></svg>
+  
+  <div id="log"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="./packages/markmap-lib/dist/browser/index.iife.js"></script>
+  <script src="./packages/markmap-view/dist/browser/index.js"></script>
+  
+  <script>
+    let view;
+    
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const item = document.createElement('div');
+      item.className = `log-item ${type}`;
+      item.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logDiv.appendChild(item);
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+    
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+    
+    async function testBasic() {
+      try {
+        log('开始基础渲染测试...');
+        
+        const { Transformer, Markmap } = window.markmap;
+        const transformer = new Transformer();
+        const { root } = transformer.transform(`
+# Markmap 测试
+## 功能测试
+- 基础渲染 ✅
+- 视图控制
+- 节点操作
+## 导出功能
+- Markdown 导出
+- SVG 导出
+## 事件系统
+- 点击事件
+- 变换事件
+        `);
+        
+        const svg = document.querySelector('#mindmap');
+        view = Markmap.create(svg, {
+          duration: 500,
+          maxWidth: 300,
+          initialExpandLevel: 3
+        });
+        
+        await view.setData(root);
+        await view.fit();
+        
+        log('✅ 基础渲染成功！', 'success');
+      } catch (error) {
+        log(`❌ 基础渲染失败: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+    
+    async function testFit() {
+      if (!view) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试 fit()...');
+        await view.fit();
+        log('✅ fit() 成功', 'success');
+      } catch (error) {
+        log(`❌ fit() 失败: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testRescale() {
+      if (!view) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试 rescale()...');
+        await view.rescale(1.5);
+        log('缩放到 1.5x');
+        await new Promise(r => setTimeout(r, 500));
+        await view.rescale(1.0);
+        log('✅ rescale() 成功', 'success');
+      } catch (error) {
+        log(`❌ rescale() 失败: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testExpandCollapse() {
+      if (!view || !view.state.data) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试 expandAll() / collapseAll()...');
+        view.expandAll(view.state.data);
+        log('展开所有节点');
+        await new Promise(r => setTimeout(r, 500));
+        view.collapseAll(view.state.data);
+        log('折叠所有节点');
+        await new Promise(r => setTimeout(r, 500));
+        view.expandAll(view.state.data);
+        log('✅ 展开/折叠成功', 'success');
+      } catch (error) {
+        log(`❌ 展开/折叠失败: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testColor() {
+      if (!view) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试 applyColorSchemeWithAnimation()...');
+        
+        const colorFn = (node) => {
+          // 安全检查
+          if (!node) {
+            log('警告: node 为 undefined，使用默认颜色');
+            return '#5e6ad2';
+          }
+          
+          const colors = ['#5e6ad2', '#26b5ce', '#f9c52a', '#f98e52', '#e55e5e'];
+          const depth = node.state?.depth ?? node.depth ?? 0;
+          return colors[depth % colors.length];
+        };
+        
+        view.applyColorSchemeWithAnimation(colorFn);
+        log('✅ 配色方案应用成功', 'success');
+      } catch (error) {
+        log(`❌ 配色方案失败: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+    
+    async function testExport() {
+      if (!view) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试导出功能...');
+        
+        const markdown = view.exportAsMarkdown();
+        log(`Markdown 导出: ${markdown.length} 字符`);
+        
+        const svg = view.exportAsSVG();
+        log(`SVG 导出: ${svg.length} 字符`);
+        
+        log('✅ 导出功能成功', 'success');
+      } catch (error) {
+        log(`❌ 导出失败: ${error.message}`, 'error');
+      }
+    }
+    
+    async function testEvents() {
+      if (!view) {
+        log('❌ 请先运行基础渲染测试', 'error');
+        return;
+      }
+      
+      try {
+        log('测试事件系统...');
+        
+        const emitter = view.getEventEmitter();
+        
+        // 测试自定义事件
+        let eventFired = false;
+        emitter.on('test:event', (data) => {
+          eventFired = true;
+          log(`收到测试事件: ${data}`);
+        });
+        
+        emitter.emit('test:event', 'Hello from test!');
+        
+        if (eventFired) {
+          log('✅ 事件系统工作正常', 'success');
+        } else {
+          log('❌ 事件未触发', 'error');
+        }
+        
+        // 监听实际事件
+        emitter.on('node:click', (node) => {
+          log(`节点被点击: ${node.content}`);
+        });
+        
+        emitter.on('view:fit', () => {
+          log('视图适应事件触发');
+        });
+        
+        log('已设置事件监听器，尝试点击节点查看效果');
+        
+      } catch (error) {
+        log(`❌ 事件系统失败: ${error.message}`, 'error');
+      }
+    }
+    
+    // 页面加载时自动运行基础测试
+    window.addEventListener('load', () => {
+      log('页面加载完成，准备测试');
+      setTimeout(() => {
+        testBasic();
+      }, 500);
+    });
+  </script>
+</body>
+</html>

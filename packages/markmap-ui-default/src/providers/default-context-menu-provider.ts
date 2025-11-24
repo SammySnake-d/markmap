@@ -33,9 +33,8 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       action: async (node, api) => {
         if (node) {
           // 导出节点为 Markdown
-          const markdown = await api.exportAsMarkdown(
-            node.state?.id?.toString(),
-          );
+          const nodeId = (node.payload as any).id?.toString();
+          const markdown = api.exportAsMarkdown(nodeId);
           // 复制到剪贴板
           await navigator.clipboard.writeText(markdown);
         }
@@ -47,7 +46,8 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       icon: '➕',
       action: async (node, api) => {
         if (node) {
-          await api.expandAll(node.state?.id?.toString());
+          const nodeId = (node.payload as any).id?.toString();
+          api.expandAll(nodeId);
         }
       },
     },
@@ -57,7 +57,8 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       icon: '➖',
       action: async (node, api) => {
         if (node) {
-          await api.collapseAll(node.state?.id?.toString());
+          const nodeId = (node.payload as any).id?.toString();
+          api.collapseAll(nodeId);
         }
       },
     },
@@ -71,16 +72,16 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       id: 'export-png',
       label: '导出为 PNG',
       icon: '🖼️',
-      action: async (node, api) => {
-        await api.exportAsPNG();
+      action: async (_node, api) => {
+        api.exportAsPNG();
       },
     },
     {
       id: 'export-svg',
       label: '导出为 SVG',
       icon: '🎨',
-      action: async (node, api) => {
-        const svg = await api.exportAsSVG();
+      action: async (_node, api) => {
+        const svg = api.exportAsSVG();
         // 下载 SVG
         const blob = new Blob([svg], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
@@ -95,8 +96,8 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       id: 'export-markdown',
       label: '导出为 Markdown',
       icon: '📝',
-      action: async (node, api) => {
-        const markdown = await api.exportAsMarkdown();
+      action: async (_node, api) => {
+        const markdown = api.exportAsMarkdown();
         // 下载 Markdown
         const blob = new Blob([markdown], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
@@ -186,7 +187,7 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
     items: IMenuItem[],
     node: INode | null,
     api: IMarkmapAPI,
-  ): HTMLElement {
+  ): HTMLDivElement {
     const menu = document.createElement('div');
     menu.className = 'markmap-context-menu';
     menu.style.cssText = `

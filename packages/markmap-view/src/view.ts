@@ -741,6 +741,8 @@ export class Markmap {
   }
 
   async renderData(originData?: INode) {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this; // Capture 'this' for use in event handlers
     const { paddingX, autoFit, color, maxWidth, lineWidth } = this.options;
     const rootNode = this.state.data;
     if (!rootNode) return;
@@ -1802,29 +1804,48 @@ export class Markmap {
     const width = x2 - x1;
     const height = y2 - y1;
 
-    // Set viewBox to match content bounds
-    clonedSvg.setAttribute('viewBox', `${x1} ${y1} ${width} ${height}`);
-    clonedSvg.setAttribute('width', width.toString());
-    clonedSvg.setAttribute('height', height.toString());
+    // Add padding to ensure content is not clipped
+    const padding = 20;
+    const viewBoxX = x1 - padding;
+    const viewBoxY = y1 - padding;
+    const viewBoxWidth = width + padding * 2;
+    const viewBoxHeight = height + padding * 2;
 
-    // Add XML namespace if not present
-    if (!clonedSvg.hasAttribute('xmlns')) {
-      clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    // Set viewBox to match content bounds with padding
+    clonedSvg.setAttribute(
+      'viewBox',
+      `${viewBoxX} ${viewBoxY} ${viewBoxWidth} ${viewBoxHeight}`,
+    );
+    clonedSvg.setAttribute('width', viewBoxWidth.toString());
+    clonedSvg.setAttribute('height', viewBoxHeight.toString());
+
+    // Add all necessary XML namespaces
+    clonedSvg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clonedSvg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
+    // Get computed styles from the original SVG
+    const styleContent = this.getStyleContent();
+
+    // Create a style element with all necessary styles
+    const styleElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'style',
+    );
+    styleElement.setAttribute('type', 'text/css');
+    styleElement.textContent = styleContent || '';
+
+    // Insert style at the beginning of the SVG
+    const defs =
+      clonedSvg.querySelector('defs') ||
+      document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    if (!clonedSvg.querySelector('defs')) {
+      clonedSvg.insertBefore(defs, clonedSvg.firstChild);
     }
+    defs.insertBefore(styleElement, defs.firstChild);
 
     // Serialize the SVG to string
     const serializer = new XMLSerializer();
-    let svgString = serializer.serializeToString(clonedSvg);
-
-    // Add inline styles from the style node
-    const styleContent = this.getStyleContent();
-    if (styleContent) {
-      // Insert style content into the SVG
-      svgString = svgString.replace(
-        '<svg',
-        `<svg><defs><style type="text/css"><![CDATA[${styleContent}]]></style></defs>`,
-      );
-    }
+    const svgString = serializer.serializeToString(clonedSvg);
 
     return svgString;
   }
@@ -1877,10 +1898,16 @@ export class Markmap {
     // Get SVG string
     const svgString = this.exportAsSVG();
 
-    // Get dimensions from state
+    // Get dimensions from state with padding
     const { x1, y1, x2, y2 } = this.state.rect;
-    const width = x2 - x1;
-    const height = y2 - y1;
+    const padding = 20;
+    const width = x2 - x1 + padding * 2;
+    const height = y2 - y1 + padding * 2;
+
+    // Validate dimensions
+    if (width <= 0 || height <= 0) {
+      throw new Error('Invalid SVG dimensions');
+    }
 
     // Create a canvas element
     const canvas = document.createElement('canvas');
@@ -1904,11 +1931,19 @@ export class Markmap {
 
     // Create an image from the SVG string
     const img = new Image();
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(svgBlob);
+
+    // Use data URL instead of blob URL for better compatibility
+    const svgBase64 = btoa(unescape(encodeURIComponent(svgString)));
+    const dataUrl = `data:image/svg+xml;base64,${svgBase64}`;
 
     return new Promise((resolve, reject) => {
+      // Set a timeout to prevent hanging
+      const timeout = setTimeout(() => {
+        reject(new Error('Image loading timeout'));
+      }, 10000);
+
       img.onload = () => {
+        clearTimeout(timeout);
         try {
           // Draw the image onto the canvas
           ctx.drawImage(img, 0, 0, width, height);
@@ -1916,7 +1951,6 @@ export class Markmap {
           // Convert canvas to blob
           canvas.toBlob(
             (blob) => {
-              URL.revokeObjectURL(url);
               if (blob) {
                 resolve(blob);
               } else {
@@ -1927,17 +1961,23 @@ export class Markmap {
             0.95, // Quality for JPEG
           );
         } catch (error) {
-          URL.revokeObjectURL(url);
           reject(error);
         }
       };
 
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Failed to load SVG image'));
+      img.onerror = (error) => {
+        clearTimeout(timeout);
+        console.error('Image load error:', error);
+        reject(
+          new Error(
+            'Failed to load SVG image. This may be due to external resources or CORS issues.',
+          ),
+        );
       };
 
-      img.src = url;
+      // Set crossOrigin to handle CORS
+      img.crossOrigin = 'anonymous';
+      img.src = dataUrl;
     });
   }
 

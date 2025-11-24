@@ -297,94 +297,13 @@ export class MarkmapAPI implements IMarkmapAPI {
 
   // ==================== 导出功能 ====================
 
-  /**
-   * 导出节点及其子树为 Markdown 文本
-   * @param nodeId - 节点 ID，如果不提供则导出整个思维导图
-   * @returns Markdown 格式的文本
-   *
-   * Requirements: 8.4
-   */
-  exportAsMarkdown(nodeId?: string): string {
-    if (!this.data) {
-      throw new Error('No data has been set');
-    }
-
-    const targetNode = nodeId ? this.findNodeById(nodeId) : this.data;
-    if (!targetNode) {
-      throw new Error(`Node with id "${nodeId}" not found`);
-    }
-
-    // 使用 markmap-lib 的 exportToMarkdown 函数
-    // 这确保了导出和解析的一致性
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { exportToMarkdown } = require('markmap-lib');
-      return exportToMarkdown(targetNode);
-    } catch {
-      // 如果 markmap-lib 不可用，使用内部实现
-      return this.nodeToMarkdown(targetNode, 0);
-    }
-  }
-
-  /**
-   * 导出思维导图为 SVG 文本
-   * @returns SVG 格式的文本
-   *
-   * Requirements: 8.5
-   */
-  exportAsSVG(): string {
-    const svg = this.core.getSVG();
-    const serializer = new XMLSerializer();
-    return serializer.serializeToString(svg);
-  }
-
-  /**
-   * 导出思维导图为 PNG 图片
-   * @returns PNG 图片的 Blob 对象
-   *
-   * Requirements: 8.5
-   */
-  async exportAsPNG(): Promise<Blob> {
-    const svgString = this.exportAsSVG();
-    const svg = this.core.getSVG();
-    const svgRect = svg.getBoundingClientRect();
-
-    // 创建 canvas
-    const canvas = document.createElement('canvas');
-    canvas.width = svgRect.width;
-    canvas.height = svgRect.height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      throw new Error('Failed to get canvas context');
-    }
-
-    // 创建图片
-    const img = new Image();
-    const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-    const url = URL.createObjectURL(svgBlob);
-
-    return new Promise((resolve, reject) => {
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0);
-        URL.revokeObjectURL(url);
-
-        canvas.toBlob((blob) => {
-          if (blob) {
-            resolve(blob);
-          } else {
-            reject(new Error('Failed to create PNG blob'));
-          }
-        }, 'image/png');
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        reject(new Error('Failed to load SVG image'));
-      };
-
-      img.src = url;
-    });
-  }
+  // ==================== 导出功能 ====================
+  // 注意：导出功能已移至 markmap-view 层
+  // 推荐使用 Markmap.exportAsMarkdown(), Markmap.exportAsSVG(), Markmap.exportAsPNG()
+  // 这些方法包含完整的样式、命名空间和优化的实现
+  //
+  // MarkmapAPI 不再提供导出方法，以避免功能重复和维护负担
+  // 如果需要导出功能，请使用 markmap-view 层的 Markmap 类
 
   // ==================== 搜索功能 ====================
 
@@ -503,34 +422,6 @@ export class MarkmapAPI implements IMarkmapAPI {
     }
 
     return null;
-  }
-
-  /**
-   * 将节点转换为 Markdown 格式
-   */
-  private nodeToMarkdown(node: INodeCommon, level: number): string {
-    const indent = '  '.repeat(level);
-    const prefix = level === 0 ? '#' : '-';
-    const textContent = this.extractTextFromHTML(node.content);
-
-    let markdown = `${indent}${prefix} ${textContent}\n`;
-
-    if (node.children && node.children.length > 0) {
-      node.children.forEach((child) => {
-        markdown += this.nodeToMarkdown(child, level + 1);
-      });
-    }
-
-    return markdown;
-  }
-
-  /**
-   * 从 HTML 中提取纯文本
-   */
-  private extractTextFromHTML(html: string): string {
-    const div = document.createElement('div');
-    div.innerHTML = html;
-    return div.textContent || div.innerText || '';
   }
 
   /**

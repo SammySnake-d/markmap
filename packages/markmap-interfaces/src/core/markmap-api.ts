@@ -68,25 +68,14 @@ export interface IMarkmapAPI {
   collapseAll(nodeId?: string): void;
 
   // ==================== 导出功能 ====================
-
-  /**
-   * 导出节点及其子树为 Markdown 文本
-   * @param nodeId - 节点 ID，如果不提供则导出整个思维导图
-   * @returns Markdown 格式的文本
-   */
-  exportAsMarkdown(nodeId?: string): string;
-
-  /**
-   * 导出思维导图为 SVG 文本
-   * @returns SVG 格式的文本
-   */
-  exportAsSVG(): string;
-
-  /**
-   * 导出思维导图为 PNG 图片
-   * @returns PNG 图片的 Blob 对象
-   */
-  exportAsPNG(): Promise<Blob>;
+  // 注意：导出功能已移至 markmap-view 层
+  // 请使用 Markmap 类的导出方法：
+  // - Markmap.exportAsMarkdown()
+  // - Markmap.exportAsSVG()
+  // - Markmap.exportAsPNG()
+  // - Markmap.downloadAsSVG()
+  //
+  // 这些方法包含完整的样式、命名空间和优化的实现
 
   // ==================== 搜索功能 ====================
 

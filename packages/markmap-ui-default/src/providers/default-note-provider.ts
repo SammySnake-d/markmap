@@ -159,7 +159,9 @@ export class DefaultNoteProvider implements INoteProvider {
         (this.currentNode as any).hasNote = !!(inlineNote || detailedNote);
 
         // 调用回调
-        this.onNoteChange(this.currentNode, content, this.currentApi);
+        if (this.onNoteChange) {
+          this.onNoteChange(this.currentNode, content);
+        }
       }
     };
 
@@ -195,7 +197,8 @@ export class DefaultNoteProvider implements INoteProvider {
   onNoteChange?(node: INode, note: string): void {
     // 默认实现：更新节点并触发重新渲染
     // 实际使用时可以被覆盖
-    console.log('Note changed for node:', node.state?.id, note);
+    const nodeId = (node.payload as any).id;
+    console.log('Note changed for node:', nodeId, note);
   }
 
   /**

@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markmap Enhanced 测试平台 (重构版)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      overflow: hidden;
+      display: flex;
+      height: 100vh;
+    }
+    
+    /* 左侧编辑器 */
+    #editor-panel {
+      width: 40%;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #e0e0e0;
+      background: #f9f9f9;
+    }
+    
+    #editor-header {
+      padding: 15px 20px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #editor-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+    
+    #editor-header button {
+      padding: 6px 12px;
+      border: 1px solid #5e6ad2;
+      background: #5e6ad2;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    
+    #editor-header button:hover {
+      background: #4c5bc7;
+    }
+    
+    #editor-header .secondary {
+      background: white;
+      color: #5e6ad2;
+    }
+    
+    #editor-header .secondary:hover {
+      background: #f5f5f5;
+    }
+    
+    #markdown-input {
+      flex: 1;
+      padding: 20px;
+      border: none;
+      font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      resize: none;
+      background: white;
+      margin: 10px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    
+    #markdown-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.1);
+    }
+    
+    /* 右侧预览 */
+    #preview-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    
+    #preview-header {
+      padding: 15px 20px;
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    #preview-header h2 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      flex: 1;
+    }
+    
+    #preview-header button {
+      padding: 6px 12px;
+      border: 1px solid #d0d0d0;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    #preview-header button:hover {
+      background: #f5f5f5;
+    }
+    
+    #mindmap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* 示例模板 */
+    #templates {
+      padding: 10px 20px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    
+    #templates label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+    }
+    
+    #templates button {
+      padding: 4px 10px;
+      border: 1px solid #d0d0d0;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    
+    #templates button:hover {
+      background: #e8e8e8;
+    }
+    
+    /* 状态提示 */
+    #status {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      z-index: 10000;
+      max-width: 400px;
+    }
+    
+    #status.success {
+      border-color: #52c41a;
+      background: #f6ffed;
+      color: #52c41a;
+    }
+    
+    #status.error {
+      border-color: #ff4d4f;
+      background: #fff2f0;
+      color: #ff4d4f;
+    }
+    
+    /* 备注功能提示 */
+    #note-tip {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 8px;
+      padding: 16px 20px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      z-index: 9999;
+      max-width: 320px;
+      animation: slideIn 0.5s ease-out;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    #note-tip h3 {
+      margin: 0 0 8px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+    
+    #note-tip p {
+      margin: 4px 0;
+      line-height: 1.5;
+      opacity: 0.95;
+    }
+    
+    #note-tip button {
+      margin-top: 12px;
+      padding: 6px 12px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    #note-tip button:hover {
+      background: rgba(255, 255, 255, 0.3);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    
+    /* 备注图标样式 */
+    .markmap-note-icon {
+      cursor: pointer;
+      user-select: none;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    
+    .markmap-note-icon:hover {
+      opacity: 1 !important;
+      transform: scale(1.2);
+    }
+    
+    /* 备注面板样式 */
+    .markmap-note-panel {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    
+    .markmap-note-panel input:focus,
+    .markmap-note-panel textarea:focus {
+      outline: none;
+      border-color: #5e6ad2;
+      box-shadow: 0 0 0 3px rgba(94, 106, 210, 0.1);
+    }
+    
+    .note-panel-close:hover {
+      color: #333;
+      background: #f5f5f5;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <!-- 左侧编辑器 -->
+  <div id="editor-panel">
+    <div id="editor-header">
+      <h2>📝 Markdown 编辑器 (重构版)</h2>
+      <button class="secondary" onclick="clearEditor()">清空</button>
+      <button onclick="renderMarkdown()">🚀 渲染</button>
+    </div>
+    
+    <div id="templates">
+      <label>快速模板:</label>
+      <button onclick="loadTemplate('basic')">基础示例</button>
+      <button onclick="loadTemplate('notes')">备注测试</button>
+      <button onclick="loadTemplate('mixed')">混合语法</button>
+      <button onclick="loadTemplate('complex')">复杂结构</button>
+      <button onclick="loadTemplate('edge')">边缘情况</button>
+    </div>
+    
+    <textarea id="markdown-input" placeholder="在此输入 Markdown 内容...&#10;&#10;支持的语法:&#10;- 标题: # ## ### #### ##### ######&#10;- 列表: - 或 *&#10;- 备注: 使用冒号 (:) 分隔&#10;- 详细备注: 使用引用块 (>)&#10;&#10;点击右上角的"渲染"按钮查看效果"></textarea>
+  </div>
+  
+  <!-- 右侧预览 -->
+  <div id="preview-panel">
+    <div id="preview-header">
+      <h2>🎨 思维导图预览 (重构版)</h2>
+      <select id="color-scheme" onchange="changeColorScheme()" style="padding: 6px 12px; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 13px; cursor: pointer;">
+        <option value="default">默认配色</option>
+        <option value="ocean">海洋风格</option>
+        <option value="forest">森林风格</option>
+        <option value="sunset">日落风格</option>
+        <option value="monochrome">单色风格</option>
+      </select>
+      <button onclick="fitView()">🎯 适应视图</button>
+      <button onclick="copyAsMarkdown()">📋 复制 Markdown</button>
+      <button onclick="exportImage()">💾 导出图片</button>
+      <button onclick="diagnoseNotes()" style="background: #f0f0f0; color: #666;">🔍 诊断备注</button>
+    </div>
+    
+    <svg id="mindmap"></svg>
+  </div>
+  
+  <div id="status" style="display: none;"></div>
+  
+  <!-- 备注功能提示 -->
+  <div id="note-tip" style="display: none;">
+    <h3>📝 备注功能已启用</h3>
+    <p>✨ 点击节点旁的 📝 图标可以添加备注</p>
+    <p>💡 支持多行文本和自动保存</p>
+    <p>🎯 试试"备注测试"模板查看示例</p>
+    <button onclick="document.getElementById('note-tip').style.display='none'">知道了</button>
+  </div>
+
+  <!-- 加载 D3.js -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  
+  <!-- 加载 markmap 库 -->
+  <script src="./packages/markmap-lib/dist/browser/index.iife.js"></script>
+  <!-- 注意：如果看到 handleNoteIconClick 错误，请按 Ctrl+Shift+R (Mac: Cmd+Shift+R) 强制刷新清除缓存 -->
+  <script src="./packages/markmap-view/dist/browser/index.js"></script>
+  
+  <script>
+    let view; // 使用重构后的 view 实例
+    let currentMarkdown = '';
+    
+    // 模板库
+    const templates = {
+      basic: `# 基础示例
+
+## 第一章
+- 内容 A
+- 内容 B
+  - 子内容 B1
+  - 子内容 B2
+
+## 第二章
+- 内容 C
+- 内容 D`,
+
+      notes: `# 备注功能测试 📝
+
+## 📌 如何使用备注功能
+- 点击节点旁边的 📝 图标打开备注面板
+- 在文本区域输入多行备注内容
+- 备注会自动保存
+- 再次点击图标或点击关闭按钮关闭面板
+
+## 单行备注示例
+- 项目名称: Markmap Enhanced
+- 开发语言: TypeScript + D3.js
+- 优先级: P0 最高优先级
+- 状态: 开发中
+- 负责人: 开发团队
+
+## 多行备注示例
+- 需求分析
+  > 这是详细备注的第一行
+  > 可以包含多行内容
+  > 支持换行和格式化
+  > 
+  > 第二段内容
+  > 继续添加更多说明
+
+## 混合备注示例
+- 用户调研: 第一阶段完成
+  > **调研对象**: 企业用户 50 人
+  > **调研方式**: 问卷 + 深度访谈
+  > **关键发现**:
+  > - 需要备注功能
+  > - 需要搜索功能
+  > - 需要导出功能
+
+## 实际应用场景
+- 项目管理: 记录任务详情和进度
+  > **任务**: 实现备注功能
+  > **截止日期**: 2024-12-31
+  > **优先级**: 高
+  > **备注**: 需要支持多行文本和自动保存
+- 知识管理: 添加学习笔记和心得
+  > 学习要点总结
+  > 重要概念解释
+  > 相关资源链接
+- 会议记录: 记录讨论要点和决策
+  > 会议时间: 2024-01-15 14:00
+  > 参会人员: 张三、李四、王五
+  > 讨论议题: 产品功能规划
+  > 决策事项: 优先开发备注功能`,
+
+      mixed: `# 混合语法测试
+
+## 标题与列表混合
+
+### 数据结构
+- 数组 (Array)
+  - 静态数组
+  - 动态数组
+- 链表 (Linked List)
+  - 单向链表
+  - 双向链表
+
+### 算法
+- 排序算法
+  - 冒泡排序
+  - 快速排序
+- 搜索算法
+  - 二分搜索
+  - 深度优先搜索
+
+## 纯列表结构
+
+- 第一层 A
+  - 第二层 A1
+    - 第三层 A1a
+  - 第二层 A2
+- 第一层 B`,
+
+      complex: `# 复杂结构测试
+
+## 深层嵌套
+
+### 三级标题
+
+#### 四级标题
+
+##### 五级标题
+
+###### 六级标题
+- 六级标题下的列表
+  - 嵌套列表
+    - 更深层嵌套
+      - 第四层
+        - 第五层
+
+## 特殊字符
+
+- 包含冒号: 14:30 会议时间
+- 包含 emoji: 🎉 庆祝
+- 转义测试\\: 这是备注
+- URL 测试: https://example.com
+- 代码: \`const x = 1\`
+
+## 长文本测试
+
+- 这是一个非常长的文本内容，用来测试节点在包含大量文字时的显示效果，看看是否会正确换行和布局: 这是备注部分，也包含很多文字
+  > 这是详细备注，包含更多的说明信息
+  > 可以有多行内容
+  > 测试长文本的渲染效果`,
+
+      edge: `# 边缘情况测试
+
+## 空内容测试
+-
+- 
+  - 
+
+## 特殊格式
+- **粗体文本**: 这是备注
+- *斜体文本*: 这是备注
+- \`代码文本\`: 这是备注
+
+## 多个冒号
+- 时间: 14:30:45
+- 比例: 1:2:3
+- URL: http://example.com:8080
+
+## 连续备注块
+- 测试项
+  > 第一个备注块
+  > 第二行
+  > 第三行
+
+## 空备注
+- 有冒号但无备注:
+- 有备注块但为空
+  >
+
+## Unicode 测试
+- 中文: 测试中文备注
+- 日文: テスト
+- Emoji: 🚀 🎨 📝 ✅
+- 特殊符号: ©️ ®️ ™️`
+    };
+    
+    // 显示状态消息
+    function showStatus(message, type = 'success') {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = type;
+      status.style.display = 'block';
+      
+      setTimeout(() => {
+        status.style.display = 'none';
+      }, 3000);
+    }
+    
+    // 加载模板
+    function loadTemplate(name) {
+      const input = document.getElementById('markdown-input');
+      input.value = templates[name] || '';
+      showStatus(`已加载"${name}"模板`);
+    }
+    
+    // 清空编辑器
+    function clearEditor() {
+      document.getElementById('markdown-input').value = '';
+      showStatus('编辑器已清空');
+    }
+    
+    // 渲染 Markdown
+    async function renderMarkdown() {
+      try {
+        const markdown = document.getElementById('markdown-input').value;
+        
+        if (!markdown.trim()) {
+          showStatus('请输入 Markdown 内容', 'error');
+          return;
+        }
+        
+        currentMarkdown = markdown;
+        
+        const { Transformer, Markmap } = window.markmap;
+        
+        // 创建 transformer
+        const transformer = new Transformer();
+        
+        // 解析 markdown
+        const { root } = transformer.transform(markdown);
+        
+        console.log('解析结果:', root);
+        
+        // 如果已有 markmap 实例，更新数据
+        if (view) {
+          await view.setData(root);
+        } else {
+          // 创建新的 markmap 实例
+          const svg = document.querySelector('#mindmap');
+          
+          view = Markmap.create(svg, {
+            duration: 500,
+            maxWidth: 300,
+            initialExpandLevel: 3,
+            paddingX: 80,
+            paddingY: 20,
+            spacingHorizontal: 80,
+            spacingVertical: 20,
+            autoFit: true,
+            fitRatio: 0.95
+          });
+          
+          await view.setData(root);
+          
+          // 设置事件监听器
+          const emitter = view.getEventEmitter();
+          
+          emitter.on('node:click', (node) => {
+            console.log('节点被点击:', node);
+          });
+          
+          emitter.on('view:fit', () => {
+            console.log('视图已适应');
+          });
+        }
+        
+        // 延迟调用 fit 确保布局完成
+        setTimeout(() => {
+          view.fit();
+        }, 100);
+        
+        showStatus('✅ 渲染成功！');
+        
+      } catch (error) {
+        console.error('渲染失败:', error);
+        showStatus('❌ 渲染失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 适应视图
+    async function fitView() {
+      if (view) {
+        await view.fit();
+        showStatus('视图已适应');
+      } else {
+        showStatus('请先渲染 Markdown', 'error');
+      }
+    }
+    
+    // 切换颜色方案
+    function changeColorScheme() {
+      if (!view) {
+        showStatus('请先渲染 Markdown', 'error');
+        return;
+      }
+      
+      const select = document.getElementById('color-scheme');
+      const schemeName = select.value;
+      
+      // 颜色方案定义
+      const colorSchemes = {
+        default: ['#5e6ad2', '#26b5ce', '#f9c52a', '#f98e52', '#e55e5e'],
+        ocean: ['#006d77', '#83c5be', '#edf6f9', '#ffddd2', '#e29578'],
+        forest: ['#2d6a4f', '#40916c', '#52b788', '#74c69d', '#95d5b2'],
+        sunset: ['#ff6b6b', '#ee5a6f', '#c44569', '#774c60', '#2d4059'],
+        monochrome: ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', '#bdc3c7']
+      };
+      
+      const colors = colorSchemes[schemeName];
+      
+      if (!colors) {
+        showStatus('未知的颜色方案', 'error');
+        return;
+      }
+      
+      // 创建颜色函数（带安全检查）
+      const colorFn = (node) => {
+        if (!node) return colors[0]; // 默认颜色
+        const depth = node.state?.depth ?? node.depth ?? 0;
+        return colors[depth % colors.length];
+      };
+      
+      // 应用颜色方案(带动画)
+      view.applyColorSchemeWithAnimation(colorFn);
+      
+      // 更新options中的color函数
+      view.options.color = colorFn;
+      
+      // 保存到localStorage
+      try {
+        localStorage.setItem('markmap-color-scheme', schemeName);
+      } catch (e) {
+        console.warn('无法保存颜色方案:', e);
+      }
+      
+      showStatus(`✅ 已切换到"${select.options[select.selectedIndex].text}"配色`);
+    }
+    
+    // 复制为 Markdown
+    function copyAsMarkdown() {
+      if (!view || !view.state.data) {
+        showStatus('请先渲染 Markdown', 'error');
+        return;
+      }
+      
+      try {
+        // 使用重构后的 exportAsMarkdown 方法
+        const md = view.exportAsMarkdown();
+        
+        navigator.clipboard.writeText(md).then(() => {
+          showStatus('✅ Markdown 已复制到剪贴板');
+        }).catch(err => {
+          console.error('复制失败:', err);
+          showStatus('复制失败', 'error');
+        });
+      } catch (error) {
+        console.error('导出失败:', error);
+        showStatus('导出失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 导出图片
+    async function exportImage() {
+      if (!view) {
+        showStatus('请先渲染 Markdown', 'error');
+        return;
+      }
+      
+      const options = ['PNG', 'SVG'];
+      const choice = prompt('选择导出格式:\n1. PNG\n2. SVG\n\n请输入数字 (1-2):', '1');
+      
+      if (!choice) return;
+      
+      const index = parseInt(choice) - 1;
+      if (index < 0 || index >= options.length) {
+        showStatus('无效的选择', 'error');
+        return;
+      }
+      
+      const format = options[index];
+      
+      try {
+        if (format === 'PNG') {
+          // PNG 导出
+          if (view.downloadAsPNG) {
+            await view.downloadAsPNG();
+          } else {
+            showStatus('PNG 导出功能暂不可用', 'error');
+          }
+        } else if (format === 'SVG') {
+          // SVG 导出
+          view.downloadAsSVG('mindmap.svg');
+        }
+        showStatus(`✅ 正在导出 ${format} 格式...`);
+      } catch (error) {
+        console.error('导出失败:', error);
+        showStatus('导出失败: ' + error.message, 'error');
+      }
+    }
+    
+    // 诊断备注功能
+    function diagnoseNotes() {
+      console.log('=== 备注功能诊断 ===');
+      
+      let report = '📋 备注功能诊断报告\n\n';
+      let hasError = false;
+      
+      // 1. 检查 view 实例
+      if (!view) {
+        report += '❌ Markmap 实例未创建\n';
+        report += '   请先点击"渲染"按钮\n\n';
+        hasError = true;
+      } else {
+        report += '✅ Markmap 实例已创建\n\n';
+        
+        // 2. 检查关键方法
+        const methods = ['handleNoteIconClick', 'setData', 'fit', 'exportAsMarkdown'];
+        report += '方法检查:\n';
+        
+        methods.forEach(method => {
+          if (typeof view[method] === 'function') {
+            report += `  ✅ ${method}\n`;
+          } else {
+            report += `  ❌ ${method} (不存在)\n`;
+            hasError = true;
+          }
+        });
+        
+        report += '\n';
+        
+        // 3. 检查 notePanel
+        if (view.notePanel) {
+          report += '✅ notePanel 对象存在\n';
+          
+          if (typeof view.notePanel.show === 'function') {
+            report += '  ✅ notePanel.show 方法存在\n';
+          } else {
+            report += '  ❌ notePanel.show 方法不存在\n';
+            hasError = true;
+          }
+        } else {
+          report += '❌ notePanel 对象不存在\n';
+          hasError = true;
+        }
+        
+        report += '\n';
+        
+        // 4. 列出所有可用方法
+        const allMethods = [];
+        for (let key in view) {
+          if (typeof view[key] === 'function') {
+            allMethods.push(key);
+          }
+        }
+        
+        report += `可用方法总数: ${allMethods.length}\n`;
+        report += '部分方法列表:\n';
+        allMethods.slice(0, 10).forEach(m => {
+          report += `  - ${m}\n`;
+        });
+        
+        if (allMethods.length > 10) {
+          report += `  ... 还有 ${allMethods.length - 10} 个方法\n`;
+        }
+      }
+      
+      report += '\n';
+      
+      // 5. 给出建议
+      if (hasError) {
+        report += '⚠️ 发现问题！\n\n';
+        report += '解决方案:\n';
+        report += '1. 按 Ctrl+Shift+R (Mac: Cmd+Shift+R) 强制刷新页面\n';
+        report += '2. 清除浏览器缓存后重新加载\n';
+        report += '3. 使用无痕模式打开页面\n';
+        report += '4. 检查构建文件是否是最新的:\n';
+        report += '   cd markmap/packages/markmap-view && pnpm build:js\n';
+      } else {
+        report += '✅ 所有检查通过！备注功能应该正常工作\n\n';
+        report += '使用方法:\n';
+        report += '1. 渲染包含备注的 Markdown\n';
+        report += '2. 点击节点旁的 📝 图标\n';
+        report += '3. 在弹出的面板中输入备注\n';
+      }
+      
+      console.log(report);
+      alert(report);
+      
+      return !hasError;
+    }
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', function() {
+      if (view) {
+        setTimeout(() => {
+          view.fit();
+        }, 100);
+      }
+    });
+    
+    // 快捷键支持
+    document.getElementById('markdown-input').addEventListener('keydown', function(e) {
+      // Ctrl/Cmd + Enter 渲染
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        renderMarkdown();
+      }
+      
+      // Tab 键插入缩进
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = this.selectionStart;
+        const end = this.selectionEnd;
+        const value = this.value;
+        this.value = value.substring(0, start) + '  ' + value.substring(end);
+        this.selectionStart = this.selectionEnd = start + 2;
+      }
+    });
+    
+    // 初始化：加载基础示例
+    window.addEventListener('load', function() {
+      if (typeof window.markmap === 'undefined') {
+        showStatus('Markmap 库加载失败', 'error');
+        return;
+      }
+      
+      // 加载保存的颜色方案
+      try {
+        const savedScheme = localStorage.getItem('markmap-color-scheme');
+        if (savedScheme) {
+          const select = document.getElementById('color-scheme');
+          select.value = savedScheme;
+        }
+      } catch (e) {
+        console.warn('无法加载保存的颜色方案:', e);
+      }
+      
+      loadTemplate('basic');
+      showStatus('欢迎使用 Markmap Enhanced 测试平台（重构版）！按 Ctrl/Cmd+Enter 快速渲染');
+      
+      // 显示备注功能提示（3秒后）
+      setTimeout(() => {
+        const noteTip = document.getElementById('note-tip');
+        if (noteTip) {
+          noteTip.style.display = 'block';
+          
+          // 10秒后自动隐藏
+          setTimeout(() => {
+            noteTip.style.display = 'none';
+          }, 10000);
+        }
+      }, 3000);
+    });
+  </script>
+</body>
+</html>

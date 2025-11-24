@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blockquote 解析调试</title>
+  <style>
+    body {
+      margin: 20px;
+      font-family: monospace;
+      background: #1e1e1e;
+      color: #d4d4d4;
+    }
+    
+    h1 {
+      color: #4ec9b0;
+    }
+    
+    .section {
+      background: #252526;
+      border: 1px solid #3e3e42;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .section h2 {
+      margin-top: 0;
+      color: #569cd6;
+    }
+    
+    pre {
+      background: #1e1e1e;
+      border: 1px solid #3e3e42;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .pass {
+      color: #4ec9b0;
+    }
+    
+    .fail {
+      color: #f48771;
+    }
+    
+    .info {
+      color: #dcdcaa;
+    }
+    
+    button {
+      background: #0e639c;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      background: #1177bb;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Blockquote 解析调试</h1>
+  
+  <div class="section">
+    <h2>测试 Markdown</h2>
+    <pre id="markdown-input">- 用户调研: 第一阶段完成
+  > **调研对象**: 企业用户 50 人
+  > **调研方式**: 问卷 + 深度访谈
+  > **关键发现**:
+  > - 需要备注功能
+  > - 需要搜索功能</pre>
+  </div>
+  
+  <div class="section">
+    <h2>步骤 1: markdown-it 解析结果</h2>
+    <button onclick="step1()">运行步骤 1</button>
+    <pre id="step1-result">等待运行...</pre>
+  </div>
+  
+  <div class="section">
+    <h2>步骤 2: Transformer 解析结果</h2>
+    <button onclick="step2()">运行步骤 2</button>
+    <pre id="step2-result">等待运行...</pre>
+  </div>
+  
+  <div class="section">
+    <h2>步骤 3: 节点数据检查</h2>
+    <button onclick="step3()">运行步骤 3</button>
+    <pre id="step3-result">等待运行...</pre>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="./packages/markmap-lib/dist/browser/index.iife.js"></script>
+  
+  <script>
+    let transformResult;
+    
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+    
+    function step1() {
+      const markdown = document.getElementById('markdown-input').textContent;
+      const resultDiv = document.getElementById('step1-result');
+      
+      try {
+        // 使用 markdown-it 直接解析
+        const md = window.markdownit();
+        const html = md.render(markdown);
+        
+        let output = '原始 Markdown:\n';
+        output += markdown + '\n\n';
+        output += 'markdown-it 生成的 HTML:\n';
+        output += html + '\n\n';
+        output += 'HTML (转义显示):\n';
+        output += escapeHtml(html);
+        
+        resultDiv.textContent = output;
+        
+      } catch (error) {
+        resultDiv.textContent = '错误: ' + error.message + '\n' + error.stack;
+      }
+    }
+    
+    function step2() {
+      const markdown = document.getElementById('markdown-input').textContent;
+      const resultDiv = document.getElementById('step2-result');
+      
+      try {
+        const { Transformer } = window.markmap;
+        const transformer = new Transformer();
+        
+        // 完整的 markdown
+        const fullMarkdown = `# 测试\n\n${markdown}`;
+        
+        transformResult = transformer.transform(fullMarkdown);
+        
+        let output = '完整 Markdown:\n';
+        output += fullMarkdown + '\n\n';
+        output += 'Transformer 解析结果:\n';
+        output += JSON.stringify(transformResult.root, null, 2);
+        
+        resultDiv.textContent = output;
+        
+      } catch (error) {
+        resultDiv.textContent = '错误: ' + error.message + '\n' + error.stack;
+      }
+    }
+    
+    function step3() {
+      const resultDiv = document.getElementById('step3-result');
+      
+      if (!transformResult) {
+        resultDiv.textContent = '请先运行步骤 2';
+        return;
+      }
+      
+      try {
+        let output = '节点数据检查:\n\n';
+        
+        function checkNode(node, indent = '') {
+          output += indent + '节点: ' + node.content + '\n';
+          output += indent + '  - hasNote: ' + (node.hasNote || false) + '\n';
+          output += indent + '  - inlineNote: ' + (node.inlineNote || 'undefined') + '\n';
+          output += indent + '  - detailedNote: ' + (node.detailedNote || 'undefined') + '\n';
+          
+          if (node.children && node.children.length > 0) {
+            output += indent + '  - children: ' + node.children.length + '\n';
+            node.children.forEach(child => {
+              checkNode(child, indent + '    ');
+            });
+          }
+        }
+        
+        checkNode(transformResult.root);
+        
+        resultDiv.textContent = output;
+        
+      } catch (error) {
+        resultDiv.textContent = '错误: ' + error.message + '\n' + error.stack;
+      }
+    }
+    
+    // 自动运行
+    window.addEventListener('load', function() {
+      if (typeof window.markmap === 'undefined') {
+        document.getElementById('step1-result').textContent = '❌ Markmap 库加载失败';
+        return;
+      }
+      
+      // 检查 markdown-it 是否可用
+      if (typeof window.markdownit === 'undefined') {
+        // 动态加载 markdown-it
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/markdown-it@13/dist/markdown-it.min.js';
+        script.onload = () => {
+          console.log('markdown-it 加载成功');
+        };
+        document.head.appendChild(script);
+      }
+    });
+  </script>
+</body>
+</html>

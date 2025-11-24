@@ -19,18 +19,35 @@ packages/*/test/
 vitest.config.mts
 vitest.workspace.ts
 
-# Ignore all markdown files except README.md and essential docs
+# Ignore all markdown files except essential docs
 *.md
 !README.md
 !FEATURES.md
 !USER_GUIDE.md
-!API_DOCUMENTATION.md
-!CUSTOM_UI_GUIDE.md
+!API_USAGE_GUIDE.md
+!MIGRATION_GUIDE.md
 !KEYBOARD_SHORTCUTS.md
 !DOCUMENTATION_INDEX.md
-!MIGRATION_GUIDE.md
-!TEST_FRAMEWORK_SETUP.md
+!OPEN_API_DESIGN.md
+# Allow markdown in packages
+!packages/*/API_DOCUMENTATION.md
+!packages/*/CUSTOM_UI_GUIDE.md
+!packages/*/README.md
 
-# Ignore demo and test HTML files
+# Ignore temporary and test documents
+**/CLEANUP*.md
+**/REFACTORING*.md
+**/TEST_*.md
+**/*_SUMMARY.md
+**/EXPORT_*.md
+
+# Ignore demo and test HTML files (except essential ones)
 demo-*.html
+!demo-playground.html
+!demo-api-test.html
+!demo-simple-test.html
 test-*.html
+!test-export.html
+
+# Ignore cleanup scripts
+cleanup-*.sh
