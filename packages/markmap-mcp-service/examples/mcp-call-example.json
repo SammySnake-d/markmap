@@ -1,0 +1,102 @@
+{
+  "description": "MCP 工具调用示例",
+  "examples": [
+    {
+      "name": "基本调用",
+      "description": "最简单的调用方式，只提供必需参数",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 示例\n\n- 节点 1\n  - 子节点 1.1\n  - 子节点 1.2\n- 节点 2",
+        "outputPath": "./output/basic.html"
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/basic.html",
+        "message": "Mindmap generated successfully at ./output/basic.html"
+      }
+    },
+    {
+      "name": "带标题和主题",
+      "description": "指定标题和颜色主题",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 项目计划\n\n- 阶段一: 需求分析\n- 阶段二: 设计\n- 阶段三: 开发",
+        "outputPath": "./output/project-plan.html",
+        "title": "项目计划思维导图",
+        "colorScheme": "ocean"
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/project-plan.html",
+        "message": "Mindmap generated successfully at ./output/project-plan.html"
+      }
+    },
+    {
+      "name": "带备注的思维导图",
+      "description": "使用冒号和引用块添加备注",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 学习笔记\n\n- JavaScript: 前端必备语言\n  > 详细说明：\n  > - 动态类型\n  > - 原型继承\n  - 变量\n  - 函数\n- TypeScript: 类型安全\n  > 推荐在大型项目中使用",
+        "outputPath": "./output/notes.html",
+        "title": "学习笔记",
+        "colorScheme": "forest"
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/notes.html",
+        "message": "Mindmap generated successfully at ./output/notes.html"
+      }
+    },
+    {
+      "name": "只读模式",
+      "description": "生成不可编辑的思维导图",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 文档目录\n\n- 第一章\n- 第二章\n- 第三章",
+        "outputPath": "./output/readonly.html",
+        "title": "文档目录",
+        "enableEdit": false
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/readonly.html",
+        "message": "Mindmap generated successfully at ./output/readonly.html"
+      }
+    },
+    {
+      "name": "暗色主题",
+      "description": "使用暗色背景主题",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 夜间模式\n\n- 功能 1\n- 功能 2",
+        "outputPath": "./output/dark.html",
+        "title": "暗色主题示例",
+        "theme": "dark",
+        "colorScheme": "monochrome"
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/dark.html",
+        "message": "Mindmap generated successfully at ./output/dark.html"
+      }
+    },
+    {
+      "name": "完整参数",
+      "description": "使用所有可用参数",
+      "tool": "generate_mindmap",
+      "input": {
+        "markdown": "# 完整示例\n\n- 主题 1: 备注内容\n  > 详细说明\n  - 子主题 1.1\n  - 子主题 1.2\n- 主题 2",
+        "outputPath": "./output/full.html",
+        "title": "完整参数示例",
+        "colorScheme": "sunset",
+        "enableEdit": true,
+        "theme": "light"
+      },
+      "expectedOutput": {
+        "success": true,
+        "filePath": "./output/full.html",
+        "message": "Mindmap generated successfully at ./output/full.html"
+      }
+    }
+  ]
+}

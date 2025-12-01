@@ -1,0 +1,66 @@
+{
+  "name": "markmap-mcp-service",
+  "version": "0.1.0",
+  "description": "MCP service for generating interactive mindmap HTML files from Markdown",
+  "author": "Markmap Enhanced",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "clean": "del-cli dist tsconfig.tsbuildinfo",
+    "build:types": "tsc",
+    "build:js": "vite build",
+    "build": "pnpm clean && pnpm /^build:/",
+    "test": "vitest --run",
+    "start": "node dist/index.js",
+    "prepublishOnly": "pnpm build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "bin": {
+    "markmap-mcp": "./dist/index.js"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "markdown",
+    "markmap",
+    "mindmap",
+    "mcp",
+    "model-context-protocol",
+    "ai-tools"
+  ],
+  "homepage": "https://github.com/markmap/markmap/packages/markmap-mcp-service#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markmap/markmap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markmap/markmap/issues"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "markmap-html-generator": "workspace:*",
+    "vitest": "^3.0.0"
+  },
+  "peerDependencies": {
+    "markmap-html-generator": "*"
+  }
+}
