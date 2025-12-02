@@ -44,15 +44,13 @@ CUSTOMIZATION_GUIDE.md
 UI_STYLING_GUIDE.md
 
 # ==================== 测试 HTML 文件 ====================
-# 调试和测试 HTML
+# 所有 demo 和 test HTML 文件（开发测试用）
+demo-*.html
 debug-*.html
 diagnose-*.html
 test-*.html
 test-*.js
 test-*.ts
-
-# Demo 文件（保留主要的）
-demo-playground-nocache.html
 
 # ==================== 其他 ====================
 # 清理脚本
