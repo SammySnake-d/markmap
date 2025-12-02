@@ -6,7 +6,30 @@
  */
 
 import { INode } from 'markmap-common';
-import { getIcon, ICONS } from './icons';
+
+/**
+ * Lucide SVG Icons - 内联 SVG 确保无外部依赖
+ * 图标来源: https://lucide.dev
+ * 使用 currentColor 支持主题色适配
+ */
+export const ICONS = {
+  // 复制
+  copy: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>`,
+  // 展开全部
+  expand: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>`,
+  // 折叠全部
+  collapse: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>`,
+  // 图片导出
+  image: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>`,
+  // 图片下载
+  imageDown: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10l-3.1-3.1a2 2 0 0 0-2.814.014L6 19"/><circle cx="9" cy="9" r="2"/><path d="m21 19-3-3"/><path d="m21 16v5h-5"/></svg>`,
+  // 代码文件 (SVG)
+  fileCode: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>`,
+  // 文本文件 (Markdown)
+  fileText: `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+  // 备注图标
+  note: `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>`,
+};
 
 export interface ContextMenuOptions {
   onCopyAsMarkdown?: (node: INode) => void;
@@ -68,17 +91,18 @@ export class ContextMenu {
     const items = [
       {
         label: '复制为 Markdown',
-        icon: 'copy' as keyof typeof ICONS,
+        icon: ICONS.copy,
+        shortcut: '⌘C',
         action: () => this.handleCopyAsMarkdown(),
       },
       {
         label: '展开全部',
-        icon: 'unfoldVertical' as keyof typeof ICONS,
+        icon: ICONS.expand,
         action: () => this.handleExpandAll(),
       },
       {
         label: '折叠全部',
-        icon: 'foldVertical' as keyof typeof ICONS,
+        icon: ICONS.collapse,
         action: () => this.handleCollapseAll(),
       },
     ];
@@ -96,26 +120,27 @@ export class ContextMenu {
     this.currentNode = null;
     this.container.innerHTML = '';
 
-    // Create canvas menu items with export options (Lucide SVG icons)
+    // Create canvas menu items with export options using Lucide SVG icons
     const items = [
       {
         label: '导出为 PNG',
-        icon: 'image' as keyof typeof ICONS,
+        icon: ICONS.image,
+        shortcut: '⌘E',
         action: () => this.handleExportPNG(),
       },
       {
         label: '导出为 JPG',
-        icon: 'image' as keyof typeof ICONS,
+        icon: ICONS.imageDown,
         action: () => this.handleExportJPG(),
       },
       {
         label: '导出为 SVG',
-        icon: 'fileCode' as keyof typeof ICONS,
+        icon: ICONS.fileCode,
         action: () => this.handleExportSVG(),
       },
       {
         label: '导出为 Markdown',
-        icon: 'fileText' as keyof typeof ICONS,
+        icon: ICONS.fileText,
         action: () => this.handleExportMarkdown(),
       },
     ];
@@ -133,7 +158,8 @@ export class ContextMenu {
   private renderMenuItems(
     items: Array<{
       label: string;
-      icon: keyof typeof ICONS;
+      icon: string;
+      shortcut?: string;
       action: () => void;
     }>,
     x: number,
@@ -142,15 +168,13 @@ export class ContextMenu {
     items.forEach((item) => {
       const menuItem = document.createElement('div');
       menuItem.className = 'markmap-context-menu-item';
-      // 样式通过 CSS 类控制，参见 style.css
 
-      // 使用 Lucide SVG 图标
+      // 使用 SVG 图标
       menuItem.innerHTML = `
-        <span class="menu-icon">${getIcon(item.icon, 16)}</span>
+        <span class="menu-icon">${item.icon}</span>
         <span class="menu-label">${item.label}</span>
+        ${item.shortcut ? `<span class="shortcut">${item.shortcut}</span>` : ''}
       `;
-
-      // Hover 效果通过 CSS :hover 伪类实现
 
       menuItem.addEventListener('click', (e) => {
         e.stopPropagation();

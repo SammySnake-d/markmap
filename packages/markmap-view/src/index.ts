@@ -12,4 +12,3 @@ export * from './touch-manager';
 export * from './storage-manager';
 export * from './style-manager';
 export * from './compat/legacy-api';
-export * from './icons';

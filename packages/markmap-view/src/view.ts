@@ -33,6 +33,7 @@ import type {
   ISearchProvider,
 } from 'markmap-interfaces';
 import { defaultOptions, isMacintosh } from './constants';
+import { ICONS } from './context-menu';
 import css from './style.css?inline';
 import {
   ID3SVGElement,
@@ -923,8 +924,8 @@ export class Markmap {
         if (hasNote) {
           // Add clickable note icon after content
           // Requirements: 5.5 - Click icon to show note panel
-          // 支持自定义图标，默认为 📝
-          const noteIcon = self.options.noteIcon || '📝';
+          // 支持自定义图标，默认为 Lucide SVG 图标
+          const noteIcon = self.options.noteIcon || ICONS.note;
           return `${d.content}<span class="markmap-note-icon" title="点击查看备注">${noteIcon}</span>`;
         }
         return d.content;
