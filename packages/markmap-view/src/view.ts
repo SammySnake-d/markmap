@@ -741,10 +741,18 @@ export class Markmap {
     return rect;
   }
 
-  async renderData(originData?: INode) {
+  async renderData(originData?: INode, options?: { skipAutoFit?: boolean }) {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this; // Capture 'this' for use in event handlers
-    const { paddingX, autoFit, color, maxWidth, lineWidth } = this.options;
+    const {
+      paddingX,
+      autoFit: configAutoFit,
+      color,
+      maxWidth,
+      lineWidth,
+    } = this.options;
+    // Allow skipping autoFit via options parameter
+    const autoFit = options?.skipAutoFit ? false : configAutoFit;
     const rootNode = this.state.data;
     if (!rootNode) return;
 
@@ -1494,11 +1502,8 @@ export class Markmap {
    */
   private handleNotePanelClose(): void {
     // Re-render to update the display with any note changes
-    // Temporarily disable autoFit to prevent viewport jump when closing note panel
-    const originalAutoFit = this.options.autoFit;
-    this.options.autoFit = false;
-    this.renderData();
-    this.options.autoFit = originalAutoFit;
+    // Skip autoFit to prevent viewport jump when closing note panel
+    this.renderData(undefined, { skipAutoFit: true });
   }
 
   /**
