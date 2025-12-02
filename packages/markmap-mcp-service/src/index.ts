@@ -143,18 +143,47 @@ function createServer(): Server {
   );
 
   // Handle list tools request
+  // 动态生成工具描述，反映当前配置的分隔符
   server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const { separators, colorScheme, theme } = DEFAULT_CONFIG;
+    const noteSep = separators.note || ':';
+    const noteBlockSep = separators.noteBlock || '>';
+    const escapeSep = separators.escape || '\\';
+    const defaultColorScheme = colorScheme || 'default';
+    const defaultTheme = theme || 'light';
+
+    // 动态生成工具描述，包含当前配置的分隔符信息
+    const dynamicDescription = `从 Markdown 生成交互式思维导图 HTML 文件。
+
+当前配置的分隔符：
+- 单行备注分隔符: "${noteSep}" (例: "- 节点内容${noteSep} 这是备注")
+- 多行备注块标记: "${noteBlockSep}" (例: "${noteBlockSep} 详细备注内容")
+- 转义字符: "${escapeSep}"
+
+Markdown 格式示例：
+\`\`\`markdown
+# 主题
+
+## 一级节点
+- 二级节点${noteSep} 单行备注
+  ${noteBlockSep} 多行备注第一行
+  ${noteBlockSep} 多行备注第二行
+  - 三级节点
+\`\`\`
+
+生成的 HTML 文件是独立的，可以直接在浏览器中打开，无需外部依赖。`;
+
     return {
       tools: [
         {
           name: generateMindmapToolMeta.name,
-          description: generateMindmapToolMeta.description,
+          description: dynamicDescription,
           inputSchema: {
             type: 'object',
             properties: {
               markdown: {
                 type: 'string',
-                description: 'Markdown 内容',
+                description: `Markdown 内容。使用 "${noteSep}" 添加单行备注，使用 "${noteBlockSep}" 添加多行备注块`,
               },
               outputPath: {
                 type: 'string',
@@ -166,7 +195,7 @@ function createServer(): Server {
               },
               colorScheme: {
                 type: 'string',
-                description: "配色方案 (default: 'default')",
+                description: `配色方案 (当前默认: '${defaultColorScheme}')`,
                 enum: ['default', 'ocean', 'forest', 'sunset', 'monochrome'],
               },
               enableEdit: {
@@ -175,7 +204,7 @@ function createServer(): Server {
               },
               theme: {
                 type: 'string',
-                description: "主题 (default: 'light')",
+                description: `主题 (当前默认: '${defaultTheme}')`,
                 enum: ['light', 'dark'],
               },
               cdnBase: {
@@ -185,19 +214,19 @@ function createServer(): Server {
               },
               separators: {
                 type: 'object',
-                description: '分隔符配置',
+                description: '分隔符配置（可覆盖环境变量配置）',
                 properties: {
                   note: {
                     type: 'string',
-                    description: "单行备注分隔符 (default: ':')",
+                    description: `单行备注分隔符 (当前: '${noteSep}')`,
                   },
                   noteBlock: {
                     type: 'string',
-                    description: "多行备注块标记 (default: '>')",
+                    description: `多行备注块标记 (当前: '${noteBlockSep}')`,
                   },
                   escape: {
                     type: 'string',
-                    description: "转义字符 (default: '\\\\')",
+                    description: `转义字符 (当前: '${escapeSep}')`,
                   },
                 },
               },
