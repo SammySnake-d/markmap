@@ -1,11 +1,17 @@
 /**
- * Note Panel Styles
+ * Note Panel Styles - iOS/macOS 沉浸式风格
  * 
  * 备注面板样式 - 扩展功能
  * 可独立修改或替换此文件来自定义备注面板外观
  * 
  * @file note-panel.css
  * @description 节点备注图标和备注编辑面板样式
+ * 
+ * 设计特点:
+ * - 毛玻璃背景与上下文菜单风格统一
+ * - 内凹式输入框 (rgba背景)
+ * - 聚焦时蓝色光晕效果
+ * - Slate-500 灰蓝色图标
  * 
  * CSS 类名说明:
  * - .markmap-note-icon: 节点旁的备注图标
@@ -15,63 +21,80 @@
  * - .note-panel-close: 关闭按钮
  * - .note-panel-content: 文本输入区域
  * - .markmap-note-panel-hint: 提示文字
- * 
- * 使用方法:
- * 1. 直接修改此文件
- * 2. 或创建新文件覆盖这些样式
- * 3. 通过 API 注册自定义样式: mm.registerStyle('note-panel', customCSS)
  */
 
-/* ========== 备注图标 ========== */
+/* ========== 备注图标 (节点旁) ========== */
 .markmap-note-icon {
-  display: inline-block;
-  margin-left: 8px;
-  font-size: 14px;
-  opacity: 0.7;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-left: 6px;
+  color: #1a1a1a;
   cursor: pointer;
   user-select: none;
   transition: all 0.2s ease;
+  background: transparent;
+}
+
+.markmap-note-icon svg {
+  width: 14px;
+  height: 14px;
+  display: block;
+  background: transparent;
+  fill: none !important; /* 覆盖 .markmap-foreign svg { fill: currentColor } */
+  stroke-width: 2.5 !important; /* 加粗描边 */
 }
 
 .markmap-note-icon:hover {
-  opacity: 1;
+  color: #3b82f6;
   transform: scale(1.15);
 }
 
-/* ========== 备注面板容器 ========== */
+/* ========== 备注面板容器 (毛玻璃风格) ========== */
 .markmap-note-panel {
   position: fixed;
   z-index: 10000;
 
-  /* 背景和边框 */
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 12px;
+  /* 毛玻璃背景 - 与上下文菜单统一 */
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
 
-  /* 阴影 */
+  /* 精致边框 */
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+
+  /* 多层柔和阴影 */
   box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.07),
-    0 10px 30px rgba(0, 0, 0, 0.12);
+    0 0 0 1px rgba(0, 0, 0, 0.02),
+    0 4px 12px rgba(0, 0, 0, 0.06),
+    0 20px 40px rgba(0, 0, 0, 0.08);
 
   /* 尺寸 */
-  min-width: 320px;
-  max-width: 500px;
-  max-height: 450px;
-  padding: 20px;
+  min-width: 300px;
+  max-width: 400px;
+  max-height: 400px;
+  padding: 16px;
   overflow: auto;
 
+  /* 字体 */
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto,
+    sans-serif;
+
   /* 动画 */
-  animation: notePanelSlideIn 0.2s ease-out;
+  animation: notePanelSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes notePanelSlideIn {
   from {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: scale(0.96) translateY(-4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -80,121 +103,164 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .markmap-note-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: #1d1d1f;
+}
+
+.markmap-note-panel-title .title-icon {
+  width: 16px;
+  height: 16px;
+  color: #64748b;
+}
+
+.markmap-note-panel-title .title-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* ========== 关闭按钮 ========== */
 .markmap-note-panel .note-panel-close {
-  background: none;
+  width: 22px;
+  height: 22px;
   border: none;
-  font-size: 22px;
-  line-height: 1;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
   cursor: pointer;
-  color: #999;
-  padding: 0;
-  width: 28px;
-  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+  color: #86868b;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.15s ease;
 }
 
 .markmap-note-panel .note-panel-close:hover {
-  color: #333;
-  background-color: #f0f0f0;
+  background: rgba(0, 0, 0, 0.1);
+  color: #1d1d1f;
 }
 
-/* ========== 文本输入区域 ========== */
+/* ========== 文本输入区域 (自动扩容) ========== */
 .markmap-note-panel .note-panel-content {
-  width: 100%;
-  min-height: 200px;
-  padding: 14px;
+  /* 去除原生样式 */
+  appearance: none;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  resize: vertical;
 
-  /* 边框 */
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  /* 尺寸 - 自动扩容 */
+  width: 100%;
+  min-height: 40px;
+  max-height: 300px;
+  padding: 10px 12px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  field-sizing: content; /* 现代浏览器自动扩容 */
+
+  /* 内凹式背景 */
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
 
   /* 文字 */
-  font-size: 14px;
   font-family: inherit;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.6;
   color: #333;
 
-  /* 其他 */
-  resize: vertical;
-  box-sizing: border-box;
+  /* 过渡动画 */
   transition:
-    border-color 0.2s ease,
+    background 0.2s ease,
     box-shadow 0.2s ease;
 }
 
+.markmap-note-panel .note-panel-content:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .markmap-note-panel .note-panel-content:focus {
-  outline: none;
-  border-color: #4a90d9;
-  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
 }
 
 .markmap-note-panel .note-panel-content::placeholder {
-  color: #aaa;
+  color: #94a3b8;
 }
 
 /* ========== 提示文字 ========== */
 .markmap-note-panel-hint {
-  margin-top: 14px;
-  font-size: 12px;
-  color: #999;
+  margin-top: 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: right;
 }
 
 /* ========== 深色模式 ========== */
 .markmap-dark .markmap-note-icon {
+  color: #94a3b8;
   opacity: 0.8;
 }
 
+.markmap-dark .markmap-note-icon:hover {
+  color: #60a5fa;
+  opacity: 1;
+}
+
 .markmap-dark .markmap-note-panel {
-  background: #2d2d3d;
-  border-color: #404050;
+  background: rgba(40, 40, 45, 0.88);
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow:
-    0 4px 6px rgba(0, 0, 0, 0.2),
-    0 10px 30px rgba(0, 0, 0, 0.3);
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 4px 12px rgba(0, 0, 0, 0.15),
+    0 20px 40px rgba(0, 0, 0, 0.25);
 }
 
 .markmap-dark .markmap-note-panel-title {
-  color: #e0e0e0;
+  color: #f5f5f7;
+}
+
+.markmap-dark .markmap-note-panel-title .title-icon {
+  color: #94a3b8;
 }
 
 .markmap-dark .markmap-note-panel .note-panel-close {
-  color: #888;
+  background: rgba(255, 255, 255, 0.08);
+  color: #86868b;
 }
 
 .markmap-dark .markmap-note-panel .note-panel-close:hover {
-  color: #e0e0e0;
-  background-color: #3d3d4d;
+  background: rgba(255, 255, 255, 0.15);
+  color: #f5f5f7;
 }
 
 .markmap-dark .markmap-note-panel .note-panel-content {
-  background: #1e1e2e;
-  border-color: #404050;
-  color: #e0e0e0;
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e5e7;
+}
+
+.markmap-dark .markmap-note-panel .note-panel-content:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .markmap-dark .markmap-note-panel .note-panel-content:focus {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  background: rgba(30, 30, 35, 0.9);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
 }
 
 .markmap-dark .markmap-note-panel .note-panel-content::placeholder {
-  color: #666;
+  color: #6b7280;
 }
 
 .markmap-dark .markmap-note-panel-hint {
-  color: #777;
+  color: #6b7280;
 }

@@ -72,23 +72,25 @@ export class NotePanel {
     }
 
     // Create panel content
-    // 样式通过 CSS 类控制，参见 style.css
+    // 样式通过 CSS 类控制，参见 styles/note-panel.css
+    // iOS/macOS 沉浸式风格 - 毛玻璃背景 + 内凹输入框
+    const noteIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></svg>`;
+
     const html = `
       <div class="markmap-note-panel-header">
-        <h3 class="markmap-note-panel-title">备注</h3>
+        <div class="markmap-note-panel-title">
+          <span class="title-icon">${noteIcon}</span>
+          备注
+        </div>
         <button class="note-panel-close">×</button>
       </div>
       
-      <div>
-        <textarea 
-          class="note-panel-content" 
-          placeholder="输入备注内容（支持多行）..."
-        >${this.escapeHtml(combinedNote)}</textarea>
-      </div>
+      <textarea 
+        class="note-panel-content" 
+        placeholder="添加节点备注..."
+      >${this.escapeHtml(combinedNote)}</textarea>
       
-      <div class="markmap-note-panel-hint">
-        提示: 修改会自动保存
-      </div>
+      <div class="markmap-note-panel-hint">修改会自动保存</div>
     `;
 
     this.panel.innerHTML = html;
@@ -124,6 +126,16 @@ export class NotePanel {
     };
 
     noteTextarea.addEventListener('input', handleInput);
+
+    // Auto-resize textarea based on content
+    const autoResize = () => {
+      noteTextarea.style.height = 'auto';
+      const newHeight = Math.min(Math.max(noteTextarea.scrollHeight, 40), 300);
+      noteTextarea.style.height = `${newHeight}px`;
+    };
+    noteTextarea.addEventListener('input', autoResize);
+    // Initial resize
+    setTimeout(autoResize, 0);
 
     // Prevent clicks inside panel from propagating
     this.panel.addEventListener('mousedown', (e) => e.stopPropagation());
