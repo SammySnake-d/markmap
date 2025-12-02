@@ -54,6 +54,10 @@ export interface IMarkmapOptions {
   toggleRecursively: boolean;
   zoom: boolean;
 
+  // Note icon customization
+  // Requirements: 5.4 - Display note icon for nodes with notes
+  noteIcon?: string; // Custom note icon (default: '📝'), can be emoji, HTML, or SVG
+
   // Mobile support options
   // Requirements: 11.2, 11.3
   enableTouch?: boolean; // Enable touch gestures (default: true)

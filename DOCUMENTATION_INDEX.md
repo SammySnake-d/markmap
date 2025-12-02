@@ -24,7 +24,10 @@
 |------|------|----------|
 | [API 文档](./api/README.md) | 完整的 API 参考文档 | 开发者 |
 | [API 文档（在线）](./api/index.html) | TypeDoc 生成的在线文档 | 开发者 |
+| [API 使用指南](./API_USAGE_GUIDE.md) | API 使用示例和最佳实践 | 开发者 |
 | [测试框架设置](./TEST_FRAMEWORK_SETUP.md) | 测试环境配置说明 | 开发者 |
+| [自定义 UI 指南](./packages/markmap-core/CUSTOM_UI_GUIDE.md) | 自定义 UI 组件指南 | 开发者 |
+| [迁移指南](./MIGRATION_GUIDE.md) | 版本迁移说明 | 开发者 |
 
 ### 项目文档
 
@@ -35,6 +38,16 @@
 | [需求文档](../.kiro/specs/markmap-enhanced/requirements.md) | 完整的功能需求说明 | 贡献者、维护者 |
 | [设计文档](../.kiro/specs/markmap-enhanced/design.md) | 系统架构和设计决策 | 贡献者、维护者 |
 | [任务列表](../.kiro/specs/markmap-enhanced/tasks.md) | 实现计划和任务清单 | 贡献者、维护者 |
+
+### 集成文档
+
+适合需要集成 Markmap 到其他项目的开发者。
+
+| 文档 | 描述 | 适合人群 |
+|------|------|----------|
+| [HTML 生成器](./packages/markmap-html-generator/README.md) | 生成独立 HTML 文件 | 开发者 |
+| [MCP 服务](./packages/markmap-mcp-service/README.md) | MCP 服务接口 | 开发者 |
+| [MCP 集成指南](./packages/markmap-mcp-service/INTEGRATION_GUIDE.md) | MCP 客户端配置 | 开发者 |
 
 ### 其他文档
 
@@ -228,8 +241,21 @@
 ### API 集成
 
 - [API 文档](./api/README.md)
+- [API 使用指南](./API_USAGE_GUIDE.md)
+- [自定义 UI 指南](./packages/markmap-core/CUSTOM_UI_GUIDE.md)
 - [设计文档 - 组件设计](../.kiro/specs/markmap-enhanced/design.md#组件设计)
 - [需求文档 - 需求 13](../.kiro/specs/markmap-enhanced/requirements.md#需求-13-组件化和集成能力)
+
+### HTML 生成器
+
+- [HTML 生成器 README](./packages/markmap-html-generator/README.md)
+- [需求文档 - 需求 14](../.kiro/specs/markmap-enhanced/requirements.md#需求-14-html-生成器)
+
+### MCP 服务
+
+- [MCP 服务 README](./packages/markmap-mcp-service/README.md)
+- [MCP 集成指南](./packages/markmap-mcp-service/INTEGRATION_GUIDE.md)
+- [需求文档 - 需求 15](../.kiro/specs/markmap-enhanced/requirements.md#需求-15-mcp-服务接口)
 
 ---
 
@@ -237,10 +263,14 @@
 
 ### 最后更新
 
-- 用户指南：2024-11-23
-- 快捷键速查表：2024-11-23
-- 功能特性：2024-11-23
-- API 文档：2024-11-23
+- 用户指南：2024-12-01
+- 快捷键速查表：2024-12-01
+- 功能特性：2024-12-01
+- API 文档：2024-12-01
+- 测试框架设置：2024-12-01
+- 自定义 UI 指南：2024-12-01
+- HTML 生成器：2024-12-01
+- MCP 服务：2024-12-01
 
 ### 版本
 

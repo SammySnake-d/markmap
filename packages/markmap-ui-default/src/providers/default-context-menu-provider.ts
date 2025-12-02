@@ -27,27 +27,17 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
    */
   items: IMenuItem[] = [
     {
-      id: 'copy-markdown',
-      label: '复制为 Markdown',
-      icon: '📋',
-      action: async (node, api) => {
-        if (node) {
-          // 导出节点为 Markdown
-          const nodeId = (node.payload as any).id?.toString();
-          const markdown = api.exportAsMarkdown(nodeId);
-          // 复制到剪贴板
-          await navigator.clipboard.writeText(markdown);
-        }
-      },
-    },
-    {
       id: 'expand-all',
       label: '展开全部',
       icon: '➕',
       action: async (node, api) => {
         if (node) {
-          const nodeId = (node.payload as any).id?.toString();
-          api.expandAll(nodeId);
+          const nodeId = (
+            node.payload as Record<string, unknown>
+          )?.id?.toString();
+          if (nodeId) {
+            api.expandAll(nodeId);
+          }
         }
       },
     },
@@ -57,8 +47,12 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
       icon: '➖',
       action: async (node, api) => {
         if (node) {
-          const nodeId = (node.payload as any).id?.toString();
-          api.collapseAll(nodeId);
+          const nodeId = (
+            node.payload as Record<string, unknown>
+          )?.id?.toString();
+          if (nodeId) {
+            api.collapseAll(nodeId);
+          }
         }
       },
     },
@@ -66,46 +60,32 @@ export class DefaultContextMenuProvider implements IContextMenuProvider {
 
   /**
    * 画布级别的菜单项（当 node 为 null 时使用）
+   * 注意：导出功能需要通过 Markmap 实例调用，不在 IMarkmapAPI 接口中
+   * 如需导出功能，请在创建 DefaultContextMenuProvider 时传入自定义 items
    */
   private canvasItems: IMenuItem[] = [
     {
-      id: 'export-png',
-      label: '导出为 PNG',
-      icon: '🖼️',
+      id: 'fit-view',
+      label: '适应视图',
+      icon: '🔍',
       action: async (_node, api) => {
-        api.exportAsPNG();
+        api.fit();
       },
     },
     {
-      id: 'export-svg',
-      label: '导出为 SVG',
-      icon: '🎨',
+      id: 'expand-all-global',
+      label: '全部展开',
+      icon: '➕',
       action: async (_node, api) => {
-        const svg = api.exportAsSVG();
-        // 下载 SVG
-        const blob = new Blob([svg], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'markmap.svg';
-        a.click();
-        URL.revokeObjectURL(url);
+        api.expandAll();
       },
     },
     {
-      id: 'export-markdown',
-      label: '导出为 Markdown',
-      icon: '📝',
+      id: 'collapse-all-global',
+      label: '全部折叠',
+      icon: '➖',
       action: async (_node, api) => {
-        const markdown = api.exportAsMarkdown();
-        // 下载 Markdown
-        const blob = new Blob([markdown], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'markmap.md';
-        a.click();
-        URL.revokeObjectURL(url);
+        api.collapseAll();
       },
     },
   ];

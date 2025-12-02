@@ -8,46 +8,69 @@ packages/*/coverage
 packages/*/types
 *.tsbuildinfo
 
-# Ignore all test files
+# ==================== 测试文件 ====================
+# 测试目录和文件
 packages/*/test/
-**/test/
 *.test.ts
 *.test.js
 *.test.mts
 *.spec.ts
 *.spec.js
-vitest.config.mts
-vitest.workspace.ts
 
-# Ignore all markdown files except essential docs
-*.md
-!README.md
-!FEATURES.md
-!USER_GUIDE.md
-!API_USAGE_GUIDE.md
-!MIGRATION_GUIDE.md
-!KEYBOARD_SHORTCUTS.md
-!DOCUMENTATION_INDEX.md
-!OPEN_API_DESIGN.md
-# Allow markdown in packages
-!packages/*/API_DOCUMENTATION.md
-!packages/*/CUSTOM_UI_GUIDE.md
+# ==================== 临时/调试文档 ====================
+# 修复记录文档
+*_FIX.md
+*_FIX_GUIDE.md
+*_FINAL_FIX.md
+MIXED_NOTES_FIX.md
+NOTES_FIX_GUIDE.md
+NOTE_CLICK_FIX.md
+NOTE_PARSING_GUIDE.md
+NOTES_FINAL_FIX.md
+
+# 重构/清理文档
+REFACTORING_SUMMARY.md
+CLEANUP*.md
+*_SUMMARY.md
+
+# 测试框架文档
+TEST_FRAMEWORK_SETUP.md
+
+# 导出架构文档（内部）
+EXPORT_ARCHITECTURE.md
+
+# 自定义指南（内部开发用）
+CUSTOMIZATION_GUIDE.md
+UI_STYLING_GUIDE.md
+
+# ==================== 测试 HTML 文件 ====================
+# 调试和测试 HTML
+debug-*.html
+diagnose-*.html
+test-*.html
+test-*.js
+test-*.ts
+
+# Demo 文件（保留主要的）
+demo-playground-nocache.html
+
+# ==================== 其他 ====================
+# 清理脚本
+cleanup-*.sh
+
+# TypeDoc 临时文件
+typedoc-temp.json
+
+# vitest 配置
+vitest.workspace.ts
+packages/*/vitest.config.mts
+
+# 包内部文档（实现细节）
+packages/*/*.md
 !packages/*/README.md
 
-# Ignore temporary and test documents
-**/CLEANUP*.md
-**/REFACTORING*.md
-**/TEST_*.md
-**/*_SUMMARY.md
-**/EXPORT_*.md
+# 示例文件
+packages/*/examples/
 
-# Ignore demo and test HTML files (except essential ones)
-demo-*.html
-!demo-playground.html
-!demo-api-test.html
-!demo-simple-test.html
-test-*.html
-!test-export.html
-
-# Ignore cleanup scripts
-cleanup-*.sh
+# 包内部文档目录
+packages/*/docs/

@@ -81,38 +81,17 @@ export class StorageManager {
     );
 
     // Create a visual warning banner if in browser environment
+    // 样式通过 CSS 类控制，参见 style.css
     if (typeof document !== 'undefined') {
       const banner = document.createElement('div');
-      banner.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background-color: #ff9800;
-        color: white;
-        padding: 12px;
-        text-align: center;
-        z-index: 10000;
-        font-family: sans-serif;
-        font-size: 14px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-      `;
+      banner.className = 'markmap-storage-warning';
       banner.textContent =
         '⚠️ Storage unavailable - Running in read-only mode. Changes will not be saved.';
 
       // Add close button
       const closeBtn = document.createElement('button');
+      closeBtn.className = 'markmap-storage-warning-close';
       closeBtn.textContent = '×';
-      closeBtn.style.cssText = `
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        cursor: pointer;
-        margin-left: 10px;
-        padding: 0 5px;
-      `;
       closeBtn.onclick = () => banner.remove();
       banner.appendChild(closeBtn);
 

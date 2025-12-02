@@ -1,0 +1,136 @@
+/**
+ * Context Menu Styles
+ * 
+ * 右键上下文菜单样式 - 扩展功能
+ * 可独立修改或替换此文件来自定义右键菜单外观
+ * 
+ * @file context-menu.css
+ * @description 节点右键菜单和画布右键菜单样式
+ * 
+ * CSS 类名说明:
+ * - .markmap-context-menu: 菜单容器
+ * - .markmap-context-menu-item: 菜单项
+ * - .markmap-context-menu-item .menu-icon: 菜单项图标
+ * - .markmap-context-menu hr: 分隔线
+ * 
+ * 使用方法:
+ * 1. 直接修改此文件
+ * 2. 或创建新文件覆盖这些样式
+ * 3. 通过 API 注册自定义样式: mm.registerStyle('context-menu', customCSS)
+ */
+
+/* ========== 菜单容器 ========== */
+.markmap-context-menu {
+  position: fixed;
+  z-index: 10000;
+
+  /* 背景和边框 */
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+
+  /* 阴影 */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.07),
+    0 10px 20px rgba(0, 0, 0, 0.1);
+
+  /* 尺寸 */
+  min-width: 180px;
+  padding: 6px 0;
+
+  /* 动画 */
+  animation: contextMenuFadeIn 0.15s ease-out;
+}
+
+@keyframes contextMenuFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========== 菜单项 ========== */
+.markmap-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  /* 尺寸和间距 */
+  padding: 10px 16px;
+  margin: 2px 6px;
+  border-radius: 6px;
+
+  /* 文字 */
+  font-size: 14px;
+  color: #333;
+
+  /* 交互 */
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.markmap-context-menu-item:hover {
+  background-color: #f5f5f5;
+  color: #1a1a1a;
+}
+
+.markmap-context-menu-item:active {
+  background-color: #ebebeb;
+}
+
+/* 禁用状态 */
+.markmap-context-menu-item.disabled {
+  cursor: not-allowed;
+  color: #999;
+  opacity: 0.5;
+}
+
+.markmap-context-menu-item.disabled:hover {
+  background-color: transparent;
+}
+
+/* ========== 菜单项图标 ========== */
+.markmap-context-menu-item .menu-icon {
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ========== 分隔线 ========== */
+.markmap-context-menu hr {
+  margin: 6px 12px;
+  border: none;
+  height: 1px;
+  background-color: #e8e8e8;
+}
+
+/* ========== 深色模式 ========== */
+.markmap-dark .markmap-context-menu {
+  background: #2d2d3d;
+  border-color: #404050;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.2),
+    0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .markmap-context-menu-item {
+  color: #e0e0e0;
+}
+
+.markmap-dark .markmap-context-menu-item:hover {
+  background-color: #3d3d4d;
+  color: #fff;
+}
+
+.markmap-dark .markmap-context-menu-item:active {
+  background-color: #4d4d5d;
+}
+
+.markmap-dark .markmap-context-menu hr {
+  background-color: #404050;
+}

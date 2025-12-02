@@ -402,26 +402,12 @@ export class MarkmapAPI implements IMarkmapAPI {
   }
 
   /**
-   * 根据 ID 查找节点
+   * 从 HTML 内容中提取纯文本
    */
-  private findNodeById(nodeId: string, node?: INodeCommon): INodeCommon | null {
-    const searchNode = node || this.data;
-    if (!searchNode) return null;
-
-    // 检查当前节点
-    if (searchNode.payload?.id === nodeId) {
-      return searchNode;
-    }
-
-    // 递归搜索子节点
-    if (searchNode.children) {
-      for (const child of searchNode.children) {
-        const found = this.findNodeById(nodeId, child);
-        if (found) return found;
-      }
-    }
-
-    return null;
+  private extractTextFromHTML(html: string): string {
+    if (!html) return '';
+    // 简单的 HTML 标签移除
+    return html.replace(/<[^>]*>/g, '').trim();
   }
 
   /**

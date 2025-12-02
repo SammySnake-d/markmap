@@ -54,47 +54,8 @@ export class DefaultToolbarProvider implements IToolbarProvider {
         await api.collapseAll();
       },
     },
-    {
-      id: 'export',
-      label: '导出',
-      icon: '💾',
-      type: 'dropdown',
-      tooltip: '导出思维导图',
-      options: [
-        { label: 'PNG 图片', value: 'png' },
-        { label: 'SVG 图片', value: 'svg' },
-        { label: 'Markdown', value: 'markdown' },
-      ],
-      action: async (api, value) => {
-        switch (value) {
-          case 'png':
-            await api.exportAsPNG();
-            break;
-          case 'svg': {
-            const svg = await api.exportAsSVG();
-            const blob = new Blob([svg], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'markmap.svg';
-            a.click();
-            URL.revokeObjectURL(url);
-            break;
-          }
-          case 'markdown': {
-            const markdown = await api.exportAsMarkdown();
-            const blob = new Blob([markdown], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'markmap.md';
-            a.click();
-            URL.revokeObjectURL(url);
-            break;
-          }
-        }
-      },
-    },
+    // 注意：导出功能需要通过 Markmap 实例调用，不在 IMarkmapAPI 接口中
+    // 如需导出功能，请在创建 DefaultToolbarProvider 时传入自定义 tools
   ];
 
   constructor(customTools?: IToolItem[]) {

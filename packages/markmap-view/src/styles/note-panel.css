@@ -1,0 +1,200 @@
+/**
+ * Note Panel Styles
+ * 
+ * 备注面板样式 - 扩展功能
+ * 可独立修改或替换此文件来自定义备注面板外观
+ * 
+ * @file note-panel.css
+ * @description 节点备注图标和备注编辑面板样式
+ * 
+ * CSS 类名说明:
+ * - .markmap-note-icon: 节点旁的备注图标
+ * - .markmap-note-panel: 备注面板容器
+ * - .markmap-note-panel-header: 面板头部
+ * - .markmap-note-panel-title: 面板标题
+ * - .note-panel-close: 关闭按钮
+ * - .note-panel-content: 文本输入区域
+ * - .markmap-note-panel-hint: 提示文字
+ * 
+ * 使用方法:
+ * 1. 直接修改此文件
+ * 2. 或创建新文件覆盖这些样式
+ * 3. 通过 API 注册自定义样式: mm.registerStyle('note-panel', customCSS)
+ */
+
+/* ========== 备注图标 ========== */
+.markmap-note-icon {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 14px;
+  opacity: 0.7;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.markmap-note-icon:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+/* ========== 备注面板容器 ========== */
+.markmap-note-panel {
+  position: fixed;
+  z-index: 10000;
+
+  /* 背景和边框 */
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+
+  /* 阴影 */
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.07),
+    0 10px 30px rgba(0, 0, 0, 0.12);
+
+  /* 尺寸 */
+  min-width: 320px;
+  max-width: 500px;
+  max-height: 450px;
+  padding: 20px;
+  overflow: auto;
+
+  /* 动画 */
+  animation: notePanelSlideIn 0.2s ease-out;
+}
+
+@keyframes notePanelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========== 面板头部 ========== */
+.markmap-note-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.markmap-note-panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ========== 关闭按钮 ========== */
+.markmap-note-panel .note-panel-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.markmap-note-panel .note-panel-close:hover {
+  color: #333;
+  background-color: #f0f0f0;
+}
+
+/* ========== 文本输入区域 ========== */
+.markmap-note-panel .note-panel-content {
+  width: 100%;
+  min-height: 200px;
+  padding: 14px;
+
+  /* 边框 */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  /* 文字 */
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.7;
+  color: #333;
+
+  /* 其他 */
+  resize: vertical;
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.markmap-note-panel .note-panel-content:focus {
+  outline: none;
+  border-color: #4a90d9;
+  box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+}
+
+.markmap-note-panel .note-panel-content::placeholder {
+  color: #aaa;
+}
+
+/* ========== 提示文字 ========== */
+.markmap-note-panel-hint {
+  margin-top: 14px;
+  font-size: 12px;
+  color: #999;
+}
+
+/* ========== 深色模式 ========== */
+.markmap-dark .markmap-note-icon {
+  opacity: 0.8;
+}
+
+.markmap-dark .markmap-note-panel {
+  background: #2d2d3d;
+  border-color: #404050;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.2),
+    0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.markmap-dark .markmap-note-panel-title {
+  color: #e0e0e0;
+}
+
+.markmap-dark .markmap-note-panel .note-panel-close {
+  color: #888;
+}
+
+.markmap-dark .markmap-note-panel .note-panel-close:hover {
+  color: #e0e0e0;
+  background-color: #3d3d4d;
+}
+
+.markmap-dark .markmap-note-panel .note-panel-content {
+  background: #1e1e2e;
+  border-color: #404050;
+  color: #e0e0e0;
+}
+
+.markmap-dark .markmap-note-panel .note-panel-content:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.markmap-dark .markmap-note-panel .note-panel-content::placeholder {
+  color: #666;
+}
+
+.markmap-dark .markmap-note-panel-hint {
+  color: #777;
+}

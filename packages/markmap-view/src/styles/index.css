@@ -1,0 +1,28 @@
+/**
+ * Markmap Enhanced Styles Index
+ * 
+ * 样式入口文件 - 导入所有样式模块
+ * 
+ * 样式架构说明:
+ * - core.css: 核心渲染样式（必需）
+ * - context-menu.css: 右键菜单样式（扩展）
+ * - note-panel.css: 备注面板样式（扩展）
+ * - search.css: 搜索高亮样式（扩展）
+ * - storage-warning.css: 存储警告样式（扩展）
+ * 
+ * 自定义方法:
+ * 1. 直接修改对应的样式文件
+ * 2. 创建自己的样式文件覆盖默认样式
+ * 3. 使用 StyleManager API 动态注册样式
+ * 
+ * @file index.css
+ */
+
+/* 核心样式 - 必需 */
+@import './core.css';
+
+/* 扩展功能样式 - 可选，可独立替换 */
+@import './context-menu.css';
+@import './note-panel.css';
+@import './search.css';
+@import './storage-warning.css';

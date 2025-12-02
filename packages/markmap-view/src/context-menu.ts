@@ -31,17 +31,8 @@ export class ContextMenu {
   private createContainer(): HTMLDivElement {
     const menu = document.createElement('div');
     menu.className = 'markmap-context-menu';
-    menu.style.cssText = `
-      position: fixed;
-      background: white;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      padding: 4px 0;
-      z-index: 10000;
-      display: none;
-      min-width: 180px;
-    `;
+    // 样式通过 CSS 类控制，参见 style.css
+    menu.style.display = 'none';
     document.body.appendChild(menu);
     return menu;
   }
@@ -146,28 +137,14 @@ export class ContextMenu {
     items.forEach((item) => {
       const menuItem = document.createElement('div');
       menuItem.className = 'markmap-context-menu-item';
-      menuItem.style.cssText = `
-        padding: 8px 16px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        color: #333;
-      `;
+      // 样式通过 CSS 类控制，参见 style.css
 
       menuItem.innerHTML = `
-        <span style="font-size: 16px;">${item.icon}</span>
+        <span class="menu-icon">${item.icon}</span>
         <span>${item.label}</span>
       `;
 
-      // Hover effect
-      menuItem.addEventListener('mouseenter', () => {
-        menuItem.style.backgroundColor = '#f5f5f5';
-      });
-      menuItem.addEventListener('mouseleave', () => {
-        menuItem.style.backgroundColor = 'transparent';
-      });
+      // Hover 效果通过 CSS :hover 伪类实现
 
       menuItem.addEventListener('click', (e) => {
         e.stopPropagation();

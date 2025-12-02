@@ -923,7 +923,9 @@ export class Markmap {
         if (hasNote) {
           // Add clickable note icon after content
           // Requirements: 5.5 - Click icon to show note panel
-          return `${d.content}<span class="markmap-note-icon" title="点击查看备注" style="cursor: pointer; margin-left: 8px; font-size: 14px; opacity: 0.7; user-select: none;">📝</span>`;
+          // 支持自定义图标，默认为 📝
+          const noteIcon = self.options.noteIcon || '📝';
+          return `${d.content}<span class="markmap-note-icon" title="点击查看备注">${noteIcon}</span>`;
         }
         return d.content;
       })

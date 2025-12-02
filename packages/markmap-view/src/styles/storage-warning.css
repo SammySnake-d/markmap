@@ -1,0 +1,90 @@
+/**
+ * Storage Warning Styles
+ * 
+ * 存储警告横幅样式 - 扩展功能
+ * 可独立修改或替换此文件来自定义警告横幅外观
+ * 
+ * @file storage-warning.css
+ * @description localStorage 不可用时的警告横幅样式
+ * 
+ * CSS 类名说明:
+ * - .markmap-storage-warning: 警告横幅容器
+ * - .markmap-storage-warning-close: 关闭按钮
+ * 
+ * 使用方法:
+ * 1. 直接修改此文件
+ * 2. 或创建新文件覆盖这些样式
+ */
+
+/* ========== 警告横幅 ========== */
+.markmap-storage-warning {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+
+  /* 背景和边框 */
+  background: linear-gradient(135deg, #fff3cd 0%, #ffe69c 100%);
+  border-bottom: 1px solid #ffc107;
+
+  /* 文字 */
+  color: #856404;
+  font-size: 14px;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* 间距 */
+  padding: 12px 48px 12px 16px;
+
+  /* 动画 */
+  animation: warningSlideDown 0.3s ease-out;
+}
+
+@keyframes warningSlideDown {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* ========== 关闭按钮 ========== */
+.markmap-storage-warning-close {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  /* 样式 */
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #856404;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.markmap-storage-warning-close:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+  color: #533f03;
+}
+
+/* ========== 深色模式 ========== */
+.markmap-dark .markmap-storage-warning {
+  background: linear-gradient(135deg, #4a3f00 0%, #5c4d00 100%);
+  border-bottom-color: #6b5a00;
+  color: #ffd700;
+}
+
+.markmap-dark .markmap-storage-warning-close {
+  color: #ffd700;
+}
+
+.markmap-dark .markmap-storage-warning-close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffeb3b;
+}

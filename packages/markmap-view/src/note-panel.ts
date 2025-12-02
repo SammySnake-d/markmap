@@ -50,21 +50,11 @@ export class NotePanel {
     this.currentNode = node;
 
     // Create panel element
+    // 样式通过 CSS 类控制，参见 style.css
     this.panel = document.createElement('div');
     this.panel.className = 'markmap-note-panel';
-    this.panel.style.position = 'fixed';
     this.panel.style.left = `${x}px`;
     this.panel.style.top = `${y}px`;
-    this.panel.style.zIndex = '10000';
-    this.panel.style.background = 'white';
-    this.panel.style.border = '1px solid #e0e0e0';
-    this.panel.style.borderRadius = '8px';
-    this.panel.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-    this.panel.style.padding = '16px';
-    this.panel.style.minWidth = '300px';
-    this.panel.style.maxWidth = '500px';
-    this.panel.style.maxHeight = '400px';
-    this.panel.style.overflow = 'auto';
 
     // Get note data - combine inline and detailed notes
     const inlineNote = (node as any).inlineNote || '';
@@ -82,21 +72,21 @@ export class NotePanel {
     }
 
     // Create panel content
+    // 样式通过 CSS 类控制，参见 style.css
     const html = `
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #333;">备注</h3>
-        <button class="note-panel-close" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">×</button>
+      <div class="markmap-note-panel-header">
+        <h3 class="markmap-note-panel-title">备注</h3>
+        <button class="note-panel-close">×</button>
       </div>
       
       <div>
         <textarea 
           class="note-panel-content" 
           placeholder="输入备注内容（支持多行）..."
-          style="width: 100%; min-height: 200px; padding: 12px; border: 1px solid #d0d0d0; border-radius: 4px; font-size: 14px; font-family: inherit; resize: vertical; line-height: 1.6;"
         >${this.escapeHtml(combinedNote)}</textarea>
       </div>
       
-      <div style="margin-top: 12px; font-size: 12px; color: #999;">
+      <div class="markmap-note-panel-hint">
         提示: 修改会自动保存
       </div>
     `;

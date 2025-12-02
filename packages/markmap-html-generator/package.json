@@ -1,0 +1,66 @@
+{
+  "name": "markmap-html-generator",
+  "version": "0.1.0",
+  "description": "Generate standalone HTML files from Markdown mindmaps",
+  "author": "Markmap Enhanced",
+  "license": "MIT",
+  "scripts": {
+    "clean": "del-cli dist tsconfig.tsbuildinfo",
+    "build:types": "tsc",
+    "build:js": "vite build",
+    "build": "pnpm clean && pnpm /^build:/",
+    "test": "vitest --run",
+    "prepublishOnly": "pnpm build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "markdown",
+    "markmap",
+    "mindmap",
+    "html-generator",
+    "standalone"
+  ],
+  "homepage": "https://github.com/markmap/markmap/packages/markmap-html-generator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/markmap/markmap.git"
+  },
+  "bugs": {
+    "url": "https://github.com/markmap/markmap/issues"
+  },
+  "devDependencies": {
+    "d3": "^7.8.5",
+    "markmap-common": "workspace:*",
+    "markmap-lib": "workspace:*",
+    "markmap-view": "workspace:*",
+    "markmap-toolbar": "workspace:*",
+    "markmap-render": "workspace:*",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@babel/runtime": "^7.22.6"
+  },
+  "peerDependencies": {
+    "markmap-common": "*",
+    "markmap-lib": "*",
+    "markmap-view": "*"
+  }
+}

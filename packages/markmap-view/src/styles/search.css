@@ -1,0 +1,41 @@
+/**
+ * Search Highlight Styles
+ * 
+ * 搜索高亮样式 - 扩展功能
+ * 可独立修改或替换此文件来自定义搜索高亮外观
+ * 
+ * @file search.css
+ * @description 搜索结果高亮样式
+ * 
+ * CSS 类名说明:
+ * - .markmap-search-highlight: 搜索匹配的节点
+ * - .markmap-search-current: 当前选中的搜索结果
+ * 
+ * 使用方法:
+ * 1. 直接修改此文件
+ * 2. 或创建新文件覆盖这些样式
+ * 3. 通过 API 注册自定义样式: mm.registerStyle('search', customCSS)
+ */
+
+/* ========== 搜索高亮 ========== */
+.markmap-node.markmap-search-highlight > foreignObject {
+  background-color: var(--markmap-highlight-bg, #ffeaa7);
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+/* 当前选中的搜索结果 */
+.markmap-node.markmap-search-current > foreignObject {
+  background-color: #ffcc00;
+  box-shadow: 0 0 0 2px #ff9500;
+}
+
+/* ========== 深色模式 ========== */
+.markmap-dark .markmap-node.markmap-search-highlight > foreignObject {
+  background-color: rgba(255, 234, 167, 0.3);
+}
+
+.markmap-dark .markmap-node.markmap-search-current > foreignObject {
+  background-color: rgba(255, 204, 0, 0.4);
+  box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.6);
+}

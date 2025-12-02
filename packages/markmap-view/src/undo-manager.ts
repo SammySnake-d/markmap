@@ -1,4 +1,4 @@
-import type { IEnhancedNode } from 'markmap-lib';
+import type { IEnhancedNode } from 'markmap-common';
 
 /**
  * Represents a single action in the history.

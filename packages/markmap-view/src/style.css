@@ -1,127 +1,21 @@
-.markmap {
-  --markmap-max-width: 9999px;
-  --markmap-a-color: #0097e6;
-  --markmap-a-hover-color: #00a8ff;
-  --markmap-code-bg: #f0f0f0;
-  --markmap-code-color: #555;
-  --markmap-highlight-bg: #ffeaa7;
-  --markmap-table-border: 1px solid currentColor;
-  --markmap-font: 300 16px/20px sans-serif;
-  --markmap-circle-open-bg: #fff;
-  --markmap-text-color: #333;
-  --markmap-highlight-node-bg: #ff02;
+/**
+ * Markmap Enhanced Styles
+ * 
+ * 此文件为向后兼容保留，实际样式已拆分到 styles/ 目录
+ * 
+ * 样式架构:
+ * - styles/core.css: 核心渲染样式（必需）
+ * - styles/context-menu.css: 右键菜单样式（扩展）
+ * - styles/note-panel.css: 备注面板样式（扩展）
+ * - styles/search.css: 搜索高亮样式（扩展）
+ * - styles/storage-warning.css: 存储警告样式（扩展）
+ * 
+ * 自定义方法:
+ * 1. 直接修改 styles/ 目录下对应的样式文件
+ * 2. 创建自己的样式文件覆盖默认样式
+ * 3. 使用 StyleManager API 动态注册样式
+ * 
+ * @deprecated 请直接使用 styles/index.css 或单独导入需要的样式模块
+ */
 
-  font: var(--markmap-font);
-  color: var(--markmap-text-color);
-
-  &-link {
-    fill: none;
-  }
-
-  &-node {
-    > circle {
-      cursor: pointer;
-    }
-  }
-
-  &-foreign {
-    display: inline-block;
-
-    p {
-      margin: 0;
-    }
-
-    a {
-      color: var(--markmap-a-color);
-      &:hover {
-        color: var(--markmap-a-hover-color);
-      }
-    }
-
-    code {
-      padding: 0.25em;
-      font-size: calc(1em - 2px);
-      color: var(--markmap-code-color);
-      background-color: var(--markmap-code-bg);
-      border-radius: 2px;
-    }
-
-    pre {
-      margin: 0;
-      > code {
-        display: block;
-      }
-    }
-
-    del {
-      text-decoration: line-through;
-    }
-
-    em {
-      font-style: italic;
-    }
-
-    strong {
-      font-weight: bold;
-    }
-
-    mark {
-      background: var(--markmap-highlight-bg);
-    }
-
-    table,
-    th,
-    td {
-      border-collapse: collapse;
-      border: var(--markmap-table-border);
-    }
-
-    img {
-      display: inline-block;
-    }
-
-    svg {
-      fill: currentColor;
-    }
-
-    > div {
-      width: var(--markmap-max-width);
-      text-align: left;
-      > div {
-        display: inline-block;
-      }
-    }
-  }
-
-  &-note-icon {
-    display: inline-block;
-    margin-left: 0.5em;
-    font-size: 0.9em;
-    opacity: 0.7;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
-
-    &:hover {
-      opacity: 1;
-    }
-  }
-
-  &-highlight rect {
-    fill: var(--markmap-highlight-node-bg);
-  }
-
-  /* Search highlight styles (Requirement 1.2) */
-  &-node.markmap-search-highlight {
-    > foreignObject {
-      background-color: var(--markmap-highlight-bg);
-      border-radius: 4px;
-    }
-  }
-}
-
-.markmap-dark .markmap {
-  --markmap-code-bg: #1a1b26;
-  --markmap-code-color: #ddd;
-  --markmap-circle-open-bg: #444;
-  --markmap-text-color: #eee;
-}
+@import './styles/index.css';
