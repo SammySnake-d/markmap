@@ -4,6 +4,15 @@
  * A Model Context Protocol (MCP) service that generates interactive mindmap
  * HTML files from Markdown content.
  *
+ * 支持通过环境变量配置默认值：
+ *
+ *   MARKMAP_NOTE_SEPARATOR    单行备注分隔符 (默认: ':')
+ *   MARKMAP_NOTE_BLOCK        多行备注块标记 (默认: '>')
+ *   MARKMAP_ESCAPE            转义字符 (默认: '\\')
+ *   MARKMAP_CDN_BASE          CDN 基础路径
+ *   MARKMAP_COLOR_SCHEME      默认配色方案 (默认: 'default')
+ *   MARKMAP_THEME             默认主题 (默认: 'light')
+ *
  * @packageDocumentation
  */
 
@@ -21,6 +30,7 @@ import type {
   GenerateMindmapInput,
   GenerateMindmapResult,
   McpServerConfig,
+  SeparatorConfig,
 } from './types.js';
 import {
   generateMindmapToolMeta,
@@ -42,6 +52,30 @@ const SERVER_CONFIG: McpServerConfig = {
 };
 
 /**
+ * 从环境变量获取默认配置
+ */
+function getDefaultConfig(): {
+  separators: SeparatorConfig;
+  cdnBase?: string;
+  colorScheme?: string;
+  theme?: 'light' | 'dark';
+} {
+  return {
+    separators: {
+      note: process.env.MARKMAP_NOTE_SEPARATOR || ':',
+      noteBlock: process.env.MARKMAP_NOTE_BLOCK || '>',
+      escape: process.env.MARKMAP_ESCAPE || '\\',
+    },
+    cdnBase: process.env.MARKMAP_CDN_BASE || undefined,
+    colorScheme: process.env.MARKMAP_COLOR_SCHEME || undefined,
+    theme: process.env.MARKMAP_THEME as 'light' | 'dark' | undefined,
+  };
+}
+
+// 获取默认配置（启动时解析一次）
+const DEFAULT_CONFIG = getDefaultConfig();
+
+/**
  * Generate mindmap HTML file from Markdown content
  */
 async function generateMindmap(
@@ -51,12 +85,30 @@ async function generateMindmap(
     // Dynamically import the HTML generator to avoid bundling issues
     const { generateStandaloneHTML } = await import('markmap-html-generator');
 
-    // Generate HTML content
+    // 合并默认配置和输入配置（输入优先）
+    const mergedSeparators = {
+      ...DEFAULT_CONFIG.separators,
+      ...input.separators,
+    };
+
+    // Generate HTML content with all options
+    // 默认使用本地打包模式，包含完整功能（右键菜单等）
     const html = generateStandaloneHTML(input.markdown, {
       title: input.title,
-      colorScheme: input.colorScheme,
+      colorScheme:
+        input.colorScheme ||
+        (DEFAULT_CONFIG.colorScheme as
+          | 'default'
+          | 'ocean'
+          | 'forest'
+          | 'sunset'
+          | 'monochrome'
+          | undefined),
       enableEdit: input.enableEdit ?? true,
-      theme: input.theme ?? 'light',
+      theme: input.theme || DEFAULT_CONFIG.theme || 'light',
+      cdnBase: input.cdnBase || DEFAULT_CONFIG.cdnBase,
+      separators: mergedSeparators,
+      useLocalBundle: true, // 使用本地打包，包含右键菜单等完整功能
     });
 
     // Ensure output directory exists
@@ -102,30 +154,52 @@ function createServer(): Server {
             properties: {
               markdown: {
                 type: 'string',
-                description:
-                  'Markdown content with notes (using : separator and > blocks)',
+                description: 'Markdown 内容',
               },
               outputPath: {
                 type: 'string',
-                description: 'Output HTML file path',
+                description: '输出 HTML 文件路径',
               },
               title: {
                 type: 'string',
-                description: 'Mindmap title (optional)',
+                description: "思维导图标题 (default: 'Mindmap')",
               },
               colorScheme: {
                 type: 'string',
-                description: 'Color scheme name (optional)',
+                description: "配色方案 (default: 'default')",
                 enum: ['default', 'ocean', 'forest', 'sunset', 'monochrome'],
               },
               enableEdit: {
                 type: 'boolean',
-                description: 'Enable edit mode (optional, default: true)',
+                description: '启用编辑模式 (default: true)',
               },
               theme: {
                 type: 'string',
-                description: 'Theme (optional, default: light)',
+                description: "主题 (default: 'light')",
                 enum: ['light', 'dark'],
+              },
+              cdnBase: {
+                type: 'string',
+                description:
+                  "CDN 基础路径 (default: 'https://cdn.jsdelivr.net/npm')",
+              },
+              separators: {
+                type: 'object',
+                description: '分隔符配置',
+                properties: {
+                  note: {
+                    type: 'string',
+                    description: "单行备注分隔符 (default: ':')",
+                  },
+                  noteBlock: {
+                    type: 'string',
+                    description: "多行备注块标记 (default: '>')",
+                  },
+                  escape: {
+                    type: 'string',
+                    description: "转义字符 (default: '\\\\')",
+                  },
+                },
               },
             },
             required: ['markdown', 'outputPath'],

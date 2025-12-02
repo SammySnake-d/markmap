@@ -1,41 +1,41 @@
 # markmap-mcp-service
 
-A Model Context Protocol (MCP) service for generating interactive mindmap HTML files from Markdown content.
+一个用于从 Markdown 内容生成交互式思维导图 HTML 文件的 MCP (Model Context Protocol) 服务。
 
-## Overview
+## 概述
 
-This package provides an MCP server that exposes a `generate_mindmap` tool. The tool accepts Markdown content and generates a standalone HTML file containing an interactive mindmap visualization.
+本包提供一个 MCP 服务器，暴露 `generate_mindmap` 工具。该工具接收 Markdown 内容，生成包含交互式思维导图可视化的独立 HTML 文件。
 
-## Features
+## 功能特性
 
-- 🎯 **MCP Compatible** - Works with any MCP-compatible client (Kiro, Claude Desktop, etc.)
-- 📝 **Markdown Input** - Accepts standard Markdown with enhanced note syntax
-- 🎨 **Multiple Themes** - 5 built-in color schemes + light/dark mode
-- 📤 **Standalone Output** - Generated HTML files work offline
-- ✏️ **Edit Mode** - Optional in-browser editing support
-- 🔍 **Search** - Built-in search functionality in generated files
-- 📱 **Mobile Support** - Touch gestures for pan and zoom
+- 🎯 **MCP 兼容** - 支持任何 MCP 兼容客户端（Kiro、Claude Desktop 等）
+- 📝 **Markdown 输入** - 支持标准 Markdown 及增强的备注语法
+- 🎨 **多种主题** - 5 种内置配色方案 + 明暗模式
+- 📤 **独立输出** - 生成的 HTML 文件可离线使用
+- ✏️ **编辑模式** - 可选的浏览器内编辑支持
+- 🔍 **搜索功能** - 生成文件内置搜索功能
+- 📱 **移动端支持** - 触摸手势缩放和平移
 
-## Installation
+## 安装
 
 ```bash
-# Using pnpm (recommended)
+# 使用 pnpm（推荐）
 pnpm add markmap-mcp-service
 
-# Using npm
+# 使用 npm
 npm install markmap-mcp-service
 
-# Using yarn
+# 使用 yarn
 yarn add markmap-mcp-service
 ```
 
-## Quick Start
+## 快速开始
 
-### 1. Configure MCP Client
+### 1. 配置 MCP 客户端
 
-Add the service to your MCP client configuration:
+将服务添加到 MCP 客户端配置中：
 
-**For Kiro/Claude Desktop:**
+**Kiro/Claude Desktop 配置：**
 
 ```json
 {
@@ -48,7 +48,7 @@ Add the service to your MCP client configuration:
 }
 ```
 
-**If installed globally:**
+**全局安装后：**
 
 ```json
 {
@@ -60,47 +60,91 @@ Add the service to your MCP client configuration:
 }
 ```
 
-### 2. Use the Tool
+### 2. 使用工具
 
-Once configured, you can use the `generate_mindmap` tool to create mindmap HTML files from Markdown content.
+配置完成后，即可使用 `generate_mindmap` 工具从 Markdown 内容创建思维导图 HTML 文件。
 
-## Tool Reference
+### 3. 自定义默认配置
+
+通过环境变量配置默认值：
+
+```json
+{
+  "mcpServers": {
+    "markmap": {
+      "command": "node",
+      "args": ["path/to/markmap-mcp-service/dist/index.js"],
+      "env": {
+        "MARKMAP_NOTE_SEPARATOR": "|",
+        "MARKMAP_NOTE_BLOCK": "#",
+        "MARKMAP_COLOR_SCHEME": "ocean",
+        "MARKMAP_THEME": "dark"
+      }
+    }
+  }
+}
+```
+
+**可用环境变量：**
+
+| 环境变量 | 说明 | 默认值 |
+|----------|------|--------|
+| `MARKMAP_NOTE_SEPARATOR` | 单行备注分隔符 | `:` |
+| `MARKMAP_NOTE_BLOCK` | 多行备注块标记 | `>` |
+| `MARKMAP_ESCAPE` | 转义字符 | `\\` |
+| `MARKMAP_CDN_BASE` | CDN 基础路径 | - |
+| `MARKMAP_COLOR_SCHEME` | 默认配色方案 | `default` |
+| `MARKMAP_THEME` | 默认主题 | `light` |
+
+> **注意**：工具调用时传入的参数会覆盖环境变量配置。
+
+## 工具参考
 
 ### generate_mindmap
 
-Generate an interactive mindmap HTML file from Markdown.
+从 Markdown 生成交互式思维导图 HTML 文件。
 
-#### Input Parameters
+#### 输入参数
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `markdown` | string | ✅ Yes | - | Markdown content with notes |
-| `outputPath` | string | ✅ Yes | - | Output HTML file path |
-| `title` | string | No | "Mindmap" | Page title |
-| `colorScheme` | string | No | "default" | Color scheme name |
-| `enableEdit` | boolean | No | `true` | Enable edit mode |
-| `theme` | string | No | "light" | Theme mode |
+| 参数 | 类型 | 必需 | 默认值 | 说明 |
+|------|------|------|--------|------|
+| `markdown` | string | ✅ 是 | - | Markdown 内容 |
+| `outputPath` | string | ✅ 是 | - | 输出 HTML 文件路径 |
+| `title` | string | 否 | "Mindmap" | 页面标题 |
+| `colorScheme` | string | 否 | "default" | 配色方案名称 |
+| `enableEdit` | boolean | 否 | `true` | 启用编辑模式 |
+| `theme` | string | 否 | "light" | 主题模式 |
+| `cdnBase` | string | 否 | "https://cdn.jsdelivr.net/npm" | CDN 基础路径 |
+| `separators` | object | 否 | 见下表 | 分隔符配置 |
 
-#### Color Schemes
+#### 分隔符配置 (separators)
 
-| Name | Description |
-|------|-------------|
-| `default` | Default blue-purple gradient |
-| `ocean` | Blue-green ocean tones |
-| `forest` | Green nature tones |
-| `sunset` | Warm orange-red tones |
-| `monochrome` | Grayscale |
+| 参数 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `note` | string | ":" | 单行备注分隔符 |
+| `noteBlock` | string | ">" | 多行备注块标记 |
+| `escape` | string | "\\\\" | 转义字符 |
 
-#### Theme Options
+#### 配色方案
 
-| Value | Description |
-|-------|-------------|
-| `light` | Light background (default) |
-| `dark` | Dark background |
+| 名称 | 说明 |
+|------|------|
+| `default` | 默认蓝紫渐变 |
+| `ocean` | 蓝绿海洋色调 |
+| `forest` | 绿色自然色调 |
+| `sunset` | 暖橙红色调 |
+| `monochrome` | 灰度 |
 
-#### Output Format
+#### 主题选项
 
-**Success Response:**
+| 值 | 说明 |
+|----|------|
+| `light` | 浅色背景（默认） |
+| `dark` | 深色背景 |
+
+#### 输出格式
+
+**成功响应：**
 ```json
 {
   "success": true,
@@ -109,134 +153,162 @@ Generate an interactive mindmap HTML file from Markdown.
 }
 ```
 
-**Error Response:**
+**错误响应：**
 ```json
 {
   "success": false,
-  "message": "Failed to generate mindmap: [error details]",
-  "error": "[error details]"
+  "message": "Failed to generate mindmap: [错误详情]",
+  "error": "[错误详情]"
 }
 ```
 
-## Markdown Format
+## Markdown 格式
 
-The service supports enhanced Markdown with note syntax:
+服务支持带备注语法的增强 Markdown：
 
-### Basic Structure
-
-```markdown
-# Main Topic
-
-- Node 1
-  - Child 1.1
-  - Child 1.2
-- Node 2
-  - Child 2.1
-```
-
-### Inline Notes (using `:`)
-
-Add brief notes after a colon:
+### 基本结构
 
 ```markdown
-- Node content: This is an inline note
-- Another node: Brief description here
+# 主题
+
+- 节点 1
+  - 子节点 1.1
+  - 子节点 1.2
+- 节点 2
+  - 子节点 2.1
 ```
 
-### Detailed Notes (using `>`)
+### 单行备注（使用 `:`）
 
-Add multi-line detailed notes using blockquotes:
+在冒号后添加简短备注：
 
 ```markdown
-- Node content
-  > This is a detailed note
-  > It can span multiple lines
-  > And supports **Markdown** formatting
+- 节点内容: 这是单行备注
+- 另一个节点: 简短描述
 ```
 
-### Mixed Notes
+### 详细备注（使用 `>`）
 
-Combine both inline and detailed notes:
+使用引用块添加多行详细备注：
 
 ```markdown
-- Node content: Brief inline note
-  > Detailed explanation here
-  > With more information
+- 节点内容
+  > 这是详细备注
+  > 可以跨多行
+  > 支持 **Markdown** 格式
 ```
 
-### Escape Characters
+### 混合备注
 
-Use backslash to escape special characters:
+同时使用单行和详细备注：
 
 ```markdown
-- Node with \: colon in content
-- Another node: Note with \: escaped colon
+- 节点内容: 简短单行备注
+  > 详细说明
+  > 更多信息
 ```
 
-## Examples
+### 转义字符
 
-### Basic Example
+使用反斜杠转义特殊字符：
+
+```markdown
+- 内容中包含 \: 冒号的节点
+- 另一个节点: 备注中有 \: 转义冒号
+```
+
+## 示例
+
+### 基本示例
 
 ```json
 {
-  "markdown": "# My Project\n\n- Feature 1\n  - Sub-feature 1.1\n  - Sub-feature 1.2\n- Feature 2",
+  "markdown": "# 我的项目\n\n- 功能 1\n  - 子功能 1.1\n  - 子功能 1.2\n- 功能 2",
   "outputPath": "./output/project.html"
 }
 ```
 
-### Full Example with All Options
+### 完整参数示例
 
 ```json
 {
-  "markdown": "# AI Learning Path\n\n- Basics: Foundation knowledge\n  - Math\n    - Linear Algebra\n    - Statistics\n  - Programming\n    - Python\n    - NumPy\n- Machine Learning\n  > Core ML concepts\n  > Supervised and unsupervised learning\n  - Regression\n  - Classification",
+  "markdown": "# AI 学习路径\n\n- 基础: 基础知识\n  - 数学\n    - 线性代数\n    - 统计学\n  - 编程\n    - Python\n    - NumPy\n- 机器学习\n  > 核心 ML 概念\n  > 监督学习和无监督学习\n  - 回归\n  - 分类",
   "outputPath": "./output/ai-learning.html",
-  "title": "AI Learning Path",
+  "title": "AI 学习路径",
   "colorScheme": "ocean",
   "enableEdit": true,
   "theme": "light"
 }
 ```
 
-### Read-Only Example
+### 自定义分隔符示例
+
+如果你的 Markdown 使用不同的分隔符格式，可以自定义：
 
 ```json
 {
-  "markdown": "# Documentation\n\n- Chapter 1\n- Chapter 2",
+  "markdown": "# 项目计划\n\n- 阶段一 | 这是备注\n  - 任务 1\n  - 任务 2\n- 阶段二\n  # 详细说明\n  # 多行备注",
+  "outputPath": "./output/custom.html",
+  "separators": {
+    "note": "|",
+    "noteBlock": "#"
+  }
+}
+```
+
+### 自定义 CDN 路径示例
+
+```json
+{
+  "markdown": "# 示例\n- 节点 1\n- 节点 2",
+  "outputPath": "./output/cdn.html",
+  "cdnBase": "https://unpkg.com"
+}
+```
+
+### 只读示例
+
+```json
+{
+  "markdown": "# 文档\n\n- 第一章\n- 第二章",
   "outputPath": "./docs/overview.html",
-  "title": "Documentation Overview",
+  "title": "文档概览",
   "enableEdit": false
 }
 ```
 
-## Generated HTML Features
+## 生成的 HTML 功能
 
-The generated HTML files include:
+生成的 HTML 文件包含以下功能：
 
-| Feature | Description |
-|---------|-------------|
-| 🔍 **Search** | Find nodes by content or notes (Cmd/Ctrl + F) |
-| 📝 **Edit Mode** | Edit notes directly in the browser |
-| 🎨 **Color Themes** | Switch between color schemes |
-| 📤 **Export** | Export as PNG, JPG, SVG, or Markdown |
-| 📱 **Mobile Support** | Touch gestures for pan and zoom |
-| 💾 **Auto-save** | Changes saved to localStorage |
-| ⌨️ **Keyboard Shortcuts** | Undo (Cmd/Ctrl+Z), Redo (Cmd/Ctrl+Shift+Z) |
-| 🖱️ **Canvas Controls** | Scroll to zoom, Space+drag to pan |
+| 功能 | 说明 |
+|------|------|
+| 🔍 **搜索** | 按内容或备注查找节点（Cmd/Ctrl + F） |
+| 📝 **编辑模式** | 在浏览器中直接编辑备注 |
+| 🎨 **颜色主题** | 切换配色方案 |
+| 📤 **导出** | 导出为 PNG、JPG、SVG 或 Markdown |
+| 📱 **移动端支持** | 触摸手势缩放和平移 |
+| 💾 **自动保存** | 更改保存到 localStorage |
+| ⌨️ **键盘快捷键** | 撤销（Cmd/Ctrl+Z）、重做（Cmd/Ctrl+Shift+Z） |
+| 🖱️ **画布控制** | 滚轮缩放、空格+拖拽平移 |
+| 🖱️ **右键菜单** | 复制节点/子树为 Markdown |
 
-## API Usage (Programmatic)
+> **注意**：MCP 服务默认使用本地打包模式，生成的 HTML 文件较大（约 800KB+），但包含完整功能且可离线使用。
 
-You can also use the service programmatically:
+## 编程方式使用
+
+也可以通过编程方式使用服务：
 
 ```typescript
 import { generateStandaloneHTML } from 'markmap-html-generator';
 import * as fs from 'fs';
 
-const markdown = `# My Mindmap
-- Topic 1: Note
-- Topic 2`;
+const markdown = `# 我的思维导图
+- 主题 1: 备注
+- 主题 2`;
 
 const html = generateStandaloneHTML(markdown, {
-  title: 'My Mindmap',
+  title: '我的思维导图',
   colorScheme: 'ocean',
   enableEdit: true,
   theme: 'light',
@@ -245,45 +317,45 @@ const html = generateStandaloneHTML(markdown, {
 fs.writeFileSync('./output/mindmap.html', html);
 ```
 
-## Error Handling
+## 错误处理
 
-The service handles various error conditions:
+服务处理各种错误情况：
 
-| Error Type | Description | Response |
-|------------|-------------|----------|
-| Missing required fields | `markdown` or `outputPath` not provided | Validation error |
-| Invalid color scheme | Unknown color scheme name | Validation error |
-| Invalid theme | Theme not "light" or "dark" | Validation error |
-| File write error | Cannot write to output path | File system error |
-| Parse error | Invalid Markdown format | Parse error |
+| 错误类型 | 说明 | 响应 |
+|----------|------|------|
+| 缺少必需字段 | 未提供 `markdown` 或 `outputPath` | 验证错误 |
+| 无效配色方案 | 未知的配色方案名称 | 验证错误 |
+| 无效主题 | 主题不是 "light" 或 "dark" | 验证错误 |
+| 文件写入错误 | 无法写入输出路径 | 文件系统错误 |
+| 解析错误 | 无效的 Markdown 格式 | 解析错误 |
 
-## Development
+## 开发
 
 ```bash
-# Install dependencies
+# 安装依赖
 pnpm install
 
-# Build
+# 构建
 pnpm build
 
-# Run tests
+# 运行测试
 pnpm test
 
-# Start server (for testing)
+# 启动服务器（用于测试）
 pnpm start
 ```
 
-## Requirements
+## 系统要求
 
 - Node.js >= 18
-- markmap-html-generator (peer dependency)
+- markmap-html-generator（对等依赖）
 
-## License
+## 许可证
 
 MIT
 
-## Related Packages
+## 相关包
 
-- [markmap-html-generator](../markmap-html-generator) - HTML generation library
-- [markmap-lib](../markmap-lib) - Markdown parsing library
-- [markmap-view](../markmap-view) - Visualization library
+- [markmap-html-generator](../markmap-html-generator) - HTML 生成库
+- [markmap-lib](../markmap-lib) - Markdown 解析库
+- [markmap-view](../markmap-view) - 可视化库

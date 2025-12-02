@@ -4,9 +4,9 @@ import { defineConfig } from 'vite';
 
 const { packageJson: pkg } = await readPackageUp({ cwd: import.meta.dirname });
 
+// 只将 peerDependencies 设为 external，dependencies 需要打包进去
 const external = [
-  ...builtinModules,
-  ...Object.keys(pkg.dependencies || {}),
+  ...builtinModules.map((m) => [m, `node:${m}`]).flat(),
   ...Object.keys(pkg.peerDependencies || {}),
 ];
 
