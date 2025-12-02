@@ -6,6 +6,7 @@
  */
 
 import { INode } from 'markmap-common';
+import { getIcon, ICONS } from './icons';
 
 export interface ContextMenuOptions {
   onCopyAsMarkdown?: (node: INode) => void;
@@ -63,21 +64,21 @@ export class ContextMenu {
     this.currentNode = node;
     this.container.innerHTML = '';
 
-    // Create menu items
+    // Create menu items with Lucide SVG icons
     const items = [
       {
         label: '复制为 Markdown',
-        icon: '📋',
+        icon: 'copy' as keyof typeof ICONS,
         action: () => this.handleCopyAsMarkdown(),
       },
       {
         label: '展开全部',
-        icon: '➕',
+        icon: 'unfoldVertical' as keyof typeof ICONS,
         action: () => this.handleExpandAll(),
       },
       {
         label: '折叠全部',
-        icon: '➖',
+        icon: 'foldVertical' as keyof typeof ICONS,
         action: () => this.handleCollapseAll(),
       },
     ];
@@ -95,26 +96,26 @@ export class ContextMenu {
     this.currentNode = null;
     this.container.innerHTML = '';
 
-    // Create canvas menu items with export options
+    // Create canvas menu items with export options (Lucide SVG icons)
     const items = [
       {
         label: '导出为 PNG',
-        icon: '🖼️',
+        icon: 'image' as keyof typeof ICONS,
         action: () => this.handleExportPNG(),
       },
       {
         label: '导出为 JPG',
-        icon: '🖼️',
+        icon: 'image' as keyof typeof ICONS,
         action: () => this.handleExportJPG(),
       },
       {
         label: '导出为 SVG',
-        icon: '🎨',
+        icon: 'fileCode' as keyof typeof ICONS,
         action: () => this.handleExportSVG(),
       },
       {
         label: '导出为 Markdown',
-        icon: '📝',
+        icon: 'fileText' as keyof typeof ICONS,
         action: () => this.handleExportMarkdown(),
       },
     ];
@@ -130,7 +131,11 @@ export class ContextMenu {
    * @param y - Y coordinate for menu position
    */
   private renderMenuItems(
-    items: Array<{ label: string; icon: string; action: () => void }>,
+    items: Array<{
+      label: string;
+      icon: keyof typeof ICONS;
+      action: () => void;
+    }>,
     x: number,
     y: number,
   ): void {
@@ -139,9 +144,10 @@ export class ContextMenu {
       menuItem.className = 'markmap-context-menu-item';
       // 样式通过 CSS 类控制，参见 style.css
 
+      // 使用 Lucide SVG 图标
       menuItem.innerHTML = `
-        <span class="menu-icon">${item.icon}</span>
-        <span>${item.label}</span>
+        <span class="menu-icon">${getIcon(item.icon, 16)}</span>
+        <span class="menu-label">${item.label}</span>
       `;
 
       // Hover 效果通过 CSS :hover 伪类实现

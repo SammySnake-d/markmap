@@ -1,4 +1,5 @@
 import { INode } from 'markmap-common';
+import { getIcon } from './icons';
 
 /**
  * NotePanel manages the display and editing of node notes.
@@ -71,12 +72,12 @@ export class NotePanel {
       combinedNote = detailedNote;
     }
 
-    // Create panel content
+    // Create panel content with Lucide SVG icons
     // 样式通过 CSS 类控制，参见 style.css
     const html = `
       <div class="markmap-note-panel-header">
-        <h3 class="markmap-note-panel-title">备注</h3>
-        <button class="note-panel-close">×</button>
+        <h3 class="markmap-note-panel-title">${getIcon('stickyNote', 16)} 备注</h3>
+        <button class="note-panel-close">${getIcon('x', 16)}</button>
       </div>
       
       <div>

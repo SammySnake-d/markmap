@@ -1,0 +1,274 @@
+/**
+ * Context Menu Styles - Version 3: Material Design 3 (质感设计风格)
+ * 
+ * 特点：
+ * - Google Material Design 3 风格
+ * - 表面色调 (Surface Tint)
+ * - 涟漪效果 (Ripple)
+ * - 更强的层级感和深度
+ * - 圆润的胶囊形状
+ * 
+ * @file context-menu-v3-material.css
+ */
+
+/* ========== CSS 变量 ========== */
+:root {
+  --md-sys-color-surface: #fef7ff;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-on-surface: #1d1b20;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-secondary-container: #e8def8;
+}
+
+/* ========== 菜单容器 ========== */
+.markmap-context-menu {
+  position: fixed;
+  z-index: 10000;
+
+  /* Material 表面 */
+  background: var(--md-sys-color-surface);
+
+  /* 无边框，用阴影表达层级 */
+  border: none;
+  border-radius: 16px;
+
+  /* Material 阴影 - Elevation 3 */
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    0 4px 8px rgba(0, 0, 0, 0.08),
+    0 8px 16px rgba(0, 0, 0, 0.06);
+
+  /* 尺寸 */
+  min-width: 200px;
+  max-width: 280px;
+  padding: 8px 0;
+
+  /* 字体 - Roboto */
+  font-family:
+    'Google Sans',
+    'Roboto',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+
+  /* 动画 */
+  animation: materialMenuIn 0.2s cubic-bezier(0.2, 0, 0, 1);
+  transform-origin: top left;
+
+  /* 溢出处理 */
+  overflow: hidden;
+}
+
+@keyframes materialMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ========== 菜单项 ========== */
+.markmap-context-menu-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  /* 尺寸和间距 */
+  padding: 12px 16px;
+  min-height: 48px;
+
+  /* 文字 */
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--md-sys-color-on-surface);
+  letter-spacing: 0.1px;
+  line-height: 20px;
+
+  /* 交互 */
+  cursor: pointer;
+  transition: background 0.15s ease;
+  user-select: none;
+
+  /* 涟漪效果容器 */
+  overflow: hidden;
+}
+
+/* 状态层 (State Layer) */
+.markmap-context-menu-item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.markmap-context-menu-item:hover::before {
+  opacity: 0.08;
+}
+
+.markmap-context-menu-item:active::before {
+  opacity: 0.12;
+}
+
+/* 焦点状态 */
+.markmap-context-menu-item:focus-visible {
+  outline: none;
+}
+
+.markmap-context-menu-item:focus-visible::before {
+  opacity: 0.12;
+}
+
+/* 禁用状态 */
+.markmap-context-menu-item.disabled {
+  cursor: not-allowed;
+  color: var(--md-sys-color-on-surface);
+  opacity: 0.38;
+}
+
+.markmap-context-menu-item.disabled::before {
+  display: none;
+}
+
+/* ========== 菜单项图标 (SVG) ========== */
+.markmap-context-menu-item .menu-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.markmap-context-menu-item .menu-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.5;
+}
+
+/* ========== 菜单项文字 ========== */
+.markmap-context-menu-item .menu-label {
+  flex: 1;
+}
+
+/* ========== 快捷键提示 ========== */
+.markmap-context-menu-item .shortcut {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.5px;
+}
+
+/* ========== 分隔线 ========== */
+.markmap-context-menu hr {
+  margin: 8px 0;
+  border: none;
+  height: 1px;
+  background: var(--md-sys-color-outline-variant);
+}
+
+/* ========== 菜单分组标题 ========== */
+.markmap-context-menu-group-title {
+  padding: 12px 16px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========== 子菜单箭头 ========== */
+.markmap-context-menu-item .submenu-arrow {
+  margin-left: auto;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.markmap-context-menu-item .submenu-arrow svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ========== 选中状态 ========== */
+.markmap-context-menu-item.selected {
+  background: var(--md-sys-color-secondary-container);
+}
+
+.markmap-context-menu-item.selected .menu-icon {
+  color: var(--md-sys-color-primary);
+}
+
+/* ========== 涟漪效果 (可选 JS 配合) ========== */
+.markmap-context-menu-item .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.2;
+  transform: scale(0);
+  animation: rippleEffect 0.6s ease-out;
+  pointer-events: none;
+}
+
+@keyframes rippleEffect {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* ========== 深色模式 ========== */
+.markmap-dark .markmap-context-menu {
+  --md-sys-color-surface: #1c1b1f;
+  --md-sys-color-surface-container: #211f26;
+  --md-sys-color-surface-container-high: #2b2930;
+  --md-sys-color-on-surface: #e6e1e5;
+  --md-sys-color-on-surface-variant: #cac4d0;
+  --md-sys-color-outline: #938f99;
+  --md-sys-color-outline-variant: #49454f;
+  --md-sys-color-primary: #d0bcff;
+  --md-sys-color-primary-container: #4f378b;
+  --md-sys-color-secondary-container: #4a4458;
+
+  background: var(--md-sys-color-surface);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.3),
+    0 4px 8px rgba(0, 0, 0, 0.25),
+    0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.markmap-dark .markmap-context-menu-item {
+  color: var(--md-sys-color-on-surface);
+}
+
+.markmap-dark .markmap-context-menu-item .menu-icon {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.markmap-dark .markmap-context-menu-item .shortcut {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.markmap-dark .markmap-context-menu hr {
+  background: var(--md-sys-color-outline-variant);
+}
+
+.markmap-dark .markmap-context-menu-item.selected {
+  background: var(--md-sys-color-secondary-container);
+}
+
+.markmap-dark .markmap-context-menu-item.selected .menu-icon {
+  color: var(--md-sys-color-primary);
+}
