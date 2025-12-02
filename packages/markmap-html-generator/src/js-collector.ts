@@ -504,6 +504,9 @@ export function generateInitScript(
       mm.fit();
     };
 
+    // Create floating toolbar with fit button
+    createFloatingToolbar(mm);
+
     // Expose expand/collapse functions
     window.expandAllMarkmap = function() {
       if (mm.state && mm.state.data) {
@@ -529,6 +532,99 @@ export function generateInitScript(
     svg.addEventListener('mouseup', saveViewStateDebounced);
 
     console.log('Markmap initialized successfully');
+  }
+
+  /**
+   * Create floating toolbar with common actions
+   * Includes: Fit to view, Expand all, Collapse all
+   */
+  function createFloatingToolbar(mm) {
+    var toolbar = document.createElement('div');
+    toolbar.className = 'mm-floating-toolbar';
+    toolbar.innerHTML = [
+      '<button class="mm-float-btn" data-action="fit" title="自适应视图">',
+      '  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5a2 2 0 0 1 2-2h3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M21 16v3a2 2 0 0 1-2 2h-3"/></svg>',
+      '</button>',
+      '<button class="mm-float-btn" data-action="expand" title="展开全部">',
+      '  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>',
+      '</button>',
+      '<button class="mm-float-btn" data-action="collapse" title="折叠全部">',
+      '  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>',
+      '</button>'
+    ].join('');
+
+    // Add styles
+    var style = document.createElement('style');
+    style.textContent = [
+      '.mm-floating-toolbar {',
+      '  position: fixed;',
+      '  bottom: 24px;',
+      '  right: 24px;',
+      '  display: flex;',
+      '  flex-direction: column;',
+      '  gap: 8px;',
+      '  z-index: 1000;',
+      '}',
+      '.mm-float-btn {',
+      '  width: 44px;',
+      '  height: 44px;',
+      '  border-radius: 12px;',
+      '  border: none;',
+      '  background: rgba(255, 255, 255, 0.9);',
+      '  backdrop-filter: blur(12px);',
+      '  -webkit-backdrop-filter: blur(12px);',
+      '  box-shadow: 0 2px 8px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05);',
+      '  cursor: pointer;',
+      '  display: flex;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      '  color: #555;',
+      '  transition: all 0.2s ease;',
+      '}',
+      '.mm-float-btn:hover {',
+      '  background: rgba(255, 255, 255, 1);',
+      '  box-shadow: 0 4px 12px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.08);',
+      '  color: #333;',
+      '  transform: scale(1.05);',
+      '}',
+      '.mm-float-btn:active {',
+      '  transform: scale(0.95);',
+      '}',
+      '.markmap-dark .mm-float-btn {',
+      '  background: rgba(45, 45, 60, 0.9);',
+      '  color: #ccc;',
+      '  box-shadow: 0 2px 8px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1);',
+      '}',
+      '.markmap-dark .mm-float-btn:hover {',
+      '  background: rgba(55, 55, 70, 1);',
+      '  color: #fff;',
+      '}'
+    ].join('');
+    document.head.appendChild(style);
+
+    // Add event listeners
+    toolbar.addEventListener('click', function(e) {
+      var btn = e.target.closest('.mm-float-btn');
+      if (!btn) return;
+      var action = btn.getAttribute('data-action');
+      switch (action) {
+        case 'fit':
+          mm.fit();
+          break;
+        case 'expand':
+          if (mm.state && mm.state.data) {
+            mm.expandAll(mm.state.data);
+          }
+          break;
+        case 'collapse':
+          if (mm.state && mm.state.data) {
+            mm.collapseAll(mm.state.data);
+          }
+          break;
+      }
+    });
+
+    document.body.appendChild(toolbar);
   }
 
   /**

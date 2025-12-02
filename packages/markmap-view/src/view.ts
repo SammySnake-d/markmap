@@ -1494,8 +1494,11 @@ export class Markmap {
    */
   private handleNotePanelClose(): void {
     // Re-render to update the display with any note changes
-    // Pass originData to avoid triggering autoFit
+    // Temporarily disable autoFit to prevent viewport jump when closing note panel
+    const originalAutoFit = this.options.autoFit;
+    this.options.autoFit = false;
     this.renderData();
+    this.options.autoFit = originalAutoFit;
   }
 
   /**
