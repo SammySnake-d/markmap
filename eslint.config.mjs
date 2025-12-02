@@ -16,7 +16,7 @@ export default [
       },
     },
   },
-  { ignores: ['**/*.js', '**/dist/'] },
+  { ignores: ['**/*.js', '**/dist/', '**/test/', '**/*.test.ts', '**/*.spec.ts'] },
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
